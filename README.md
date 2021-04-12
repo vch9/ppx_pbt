@@ -1,0 +1,3 @@
+# qbc
+
+Quick but Correct
