@@ -1,0 +1,21 @@
+opam-version: "2.0.5"
+name: "quick-but-correct"
+version: "0.1"
+
+homepage: "https://gitlab.com/vch9/qbc"
+bug-reports: "https://gitlab.com/vch9/qbc/-/issues"
+
+maintainer: [
+  "Valentin Chaboche <valentin.chaboche@nomadic-labs.com>"
+]
+
+authors: [
+ "Valentin Chaboche <valentin.chaboche@nomadic-labs.com>" 
+]
+
+depends: [
+  "dune" {build}
+  "ocaml" {>= "4.10.0"}
+]
+
+build: ["dune" "build" "-p" name "-j" jobs]
