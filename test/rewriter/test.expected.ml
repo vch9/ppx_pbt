@@ -156,9 +156,14 @@ module Arith = struct
 
   let scaling_factor = scaling_factor
 
-  let sub = S.sub [@@pbt {| neutral[int, Z.zero] |}]
+  let sub = S.sub
 
   let add = S.add
+
+  let test_add_is_commutative =
+    QCheck.Test.make ~name:"add_is_commutative"
+      (QCheck.pair Pbt.Gens.int Pbt.Gens.int) (fun (x, y) ->
+        Pbt.Properties.commutative add x y)
 
   let zero = S.zero
 

@@ -156,9 +156,9 @@ module Arith = struct
 
   let scaling_factor = scaling_factor
 
-  let sub = S.sub [@@pbt {| neutral[int, Z.zero] |}]
+  let sub = S.sub
 
-  let add = S.add
+  let add = S.add [@@pbt {| commutative[int, int] |}]
 
   let zero = S.zero
 
