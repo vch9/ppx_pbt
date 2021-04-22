@@ -1,17 +1,9 @@
 open Ppxlib
 
-let expand_pbt ~ctxt _properties =
-  let loc = Expansion_context.Extension.extension_point_loc ctxt in
-  (* TODO *)
-  [ [%stri let _ = ()] ]
+let attribute_name = "pbt"
 
-let extension =
-  Extension.V3.declare_inline
-    "pbt"
-    Extension.Context.structure_item
-    Ast_pattern.(single_expr_payload (estring __))
-    expand_pbt
+let expand x = [ x ]
 
-let rule = Context_free.Rule.extension extension
+let impl xs = xs |> List.map expand |> List.concat
 
-let () = Driver.register_transformation ~rules:[ rule ] "pbt"
+let () = Driver.register_transformation ~impl "ppx_pbt"

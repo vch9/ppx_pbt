@@ -6,7 +6,7 @@ New syntactic constructs
 --------------------------
 ```ocaml
 let <name> <args> = <expr>
-[%%pbt {| <properties> |}]
+[@@pbt {| <properties> |}]
 ```
 
 TODO: specify `<properties>`
@@ -18,7 +18,7 @@ Examples
 
 ```ocaml
 let add x y = x + y
-[%%pbt {| commutative[int, int] |}
+[@@pbt {| commutative[int, int] |}]
 
 (* which becomes *)
 
