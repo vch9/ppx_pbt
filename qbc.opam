@@ -16,6 +16,7 @@ authors: [
 depends: [
   "dune" {build}
   "ocaml" {>= "4.10.0"}
+  "menhir"
 ]
 
 build: ["dune" "build" "-p" name "-j" jobs]
