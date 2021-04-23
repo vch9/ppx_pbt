@@ -1,5 +1,11 @@
 (library
+ (name qbc)
  (public_name qbc)
  (kind ppx_rewriter)
- (libraries ppxlib)
+ (libraries ppxlib menhirLib)
  (preprocess (pps ppxlib.metaquot)))
+
+(ocamllex lexer)
+
+(menhir
+ (modules parser))
