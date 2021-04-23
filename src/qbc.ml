@@ -1,37 +1,48 @@
 open Ppxlib
 
-let attribute_name = "pbt"
-
 (*------ Find attributes in Ast.structure_item ------*)
 
-let rec structure_item_contains_pbt structure_item =
+let attribute_name = "pbt"
+
+let rec get_structure_item_pbt structure_item =
   match structure_item.pstr_desc with
   | Pstr_eval (expression, attributes) ->
-      attributes_contains_pbt expression.pexp_attributes
-      || attributes_contains_pbt attributes
-  | Pstr_value (_, values_binding) -> values_binding_contains_pbt values_binding
+      get_attributes_pbt expression.pexp_attributes
+      @ get_attributes_pbt attributes
+  | Pstr_value (_, values_binding) -> get_values_binding_pbt values_binding
   | Pstr_module module_binding ->
       let pmb_expr = module_binding.pmb_expr in
-      module_expr_contains_pbt pmb_expr
-  | _ -> false
+      get_module_expr_pbt pmb_expr
+  | _ -> []
 
-and structure_contains_pbt structures =
-  List.exists structure_item_contains_pbt structures
+and get_structure_pbt structures =
+  List.fold_left
+    (fun acc structure -> get_structure_item_pbt structure @ acc)
+    []
+    structures
 
-and module_expr_contains_pbt module_expr =
+and get_module_expr_pbt module_expr =
   match module_expr.pmod_desc with
-  | Pmod_structure structure -> structure_contains_pbt structure
-  | _ -> false
+  | Pmod_structure structure -> get_structure_pbt structure
+  | _ -> []
 
-and values_binding_contains_pbt vs_binds =
-  List.exists
-    (fun value_binding -> attributes_contains_pbt value_binding.pvb_attributes)
+and get_values_binding_pbt vs_binds =
+  List.fold_left
+    (fun acc value_binding ->
+      get_attributes_pbt value_binding.pvb_attributes @ acc)
+    []
     vs_binds
 
-and attributes_contains_pbt attrs =
-  List.exists
-    (fun attribute -> String.equal attribute.attr_name.txt attribute_name)
+and get_attributes_pbt attrs =
+  List.filter_map
+    (fun attribute ->
+      if String.equal attribute.attr_name.txt attribute_name then
+        Some attribute.attr_payload
+      else None)
     attrs
+
+let structure_item_contains_pbt structure_item =
+  match get_structure_item_pbt structure_item with [] -> false | _ -> true
 
 (*------ Replace structure item when attached with pbt attribute ------*)
 let rec replace_structure_item structure_item : structure_item list =
@@ -47,7 +58,11 @@ let rec replace_structure_item structure_item : structure_item list =
       ]
   (* -- Structures items where ppx_pbt is accepted -- *)
   (* let <fname> <args> = <expr> *)
-  | Pstr_value (_, _values_binding) -> failwith "TODO"
+  | Pstr_value _ ->
+      (* TODO: optimize here *)
+      if structure_item_contains_pbt structure_item then
+        Tests.replace_pbt structure_item (get_structure_item_pbt structure_item)
+      else [ structure_item ]
   | _ -> [ structure_item ]
 
 and replace_structure structure =
