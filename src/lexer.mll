@@ -1,5 +1,6 @@
 {
   open Parser
+  open Error
 }
 
 
@@ -16,3 +17,5 @@ rule token = parse
 
 (* Regexp *)
 | id as s { ID s }
+
+| _+ as s { syntax_error s }

@@ -1,4 +1,5 @@
 open Ppxlib
+open Error
 
 (*------ Find attributes in Ast.structure_item ------*)
 
@@ -81,9 +82,13 @@ and replace_module_expr module_expr =
   | _ -> module_expr
 
 let expand struct_item =
-  if structure_item_contains_pbt struct_item then
-    replace_structure_item struct_item
-  else [ struct_item ]
+  try
+    if structure_item_contains_pbt struct_item then
+      replace_structure_item struct_item
+    else [ struct_item ]
+  with e ->
+    Error.print_exception e ;
+    raise InternalError
 
 let impl xs = xs |> List.map expand |> List.concat
 
