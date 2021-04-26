@@ -28,6 +28,14 @@ let build_pattern loc test_name =
     ppat_attributes = [];
   }
 
+let build_defaut_pattern loc =
+  {
+    ppat_desc = Ppat_any;
+    ppat_loc = loc;
+    ppat_loc_stack = [];
+    ppat_attributes = [];
+  }
+
 let build_value_binding loc pat expr =
   { pvb_pat = pat; pvb_expr = expr; pvb_attributes = []; pvb_loc = loc }
 
@@ -43,8 +51,10 @@ let build_let loc values_binding exp =
   let let_exp = Pexp_let (Nonrecursive, values_binding, exp) in
   build_expression loc let_exp
 
-(* Build_open _ *)
-let build_open _ = failwith "TODO"
+let build_string loc str =
+  build_expression loc (Pexp_constant (Pconst_string (str, loc, None)))
+
+let default_expr loc = build_string loc "TODO"
 
 (* Build_gens _ *)
 let build_gens _ = failwith "TODO"
@@ -52,20 +62,19 @@ let build_gens _ = failwith "TODO"
 (* Build_testing _ *)
 let build_testing_fun _ = failwith "TODO"
 
-(* Build_testing_fun _
+(* Build_testing_fun loc fun_name properties
 
-   <build_open>
    Test.make ~name:<fun_name>_is_<name>
    <build_gens>
    <build_testing_fun> *)
-let build_qcheck_tests _ = failwith "TODO"
-
-(* Build_test loc fun_name (name, args) :
-
-   <build_open>
-   <build_qcheck_test> *)
-let build_test loc _fun_name (_name, _args) =
-  build_expression loc (Pexp_constant (Pconst_string ("TODO", loc, None)))
+let build_test loc _fun_name qcheck_name _properties =
+  let make_exp =
+    build_expression
+      loc
+      (Pexp_ident { loc; txt = Ldot (Ldot (Lident "QCheck", "Test"), "make") })
+  in
+  let name_exp = (Labelled "name", build_string loc qcheck_name) in
+  build_expression loc (Pexp_apply (make_exp, [ name_exp ]))
 
 (* Build fun_name (name, args) :
 
@@ -73,8 +82,9 @@ let build_test loc _fun_name (_name, _args) =
 let build fun_name ((name, _args) as properties) =
   let loc = !Ast_helper.default_loc in
   let test_name = Format.sprintf "test_%s_is_%s" fun_name name in
+  let qcheck_name = Format.sprintf "%s_is_%s" fun_name name in
   let vb_pat = build_pattern loc test_name in
-  let test_exp = build_test loc fun_name properties in
+  let test_exp = build_test loc fun_name qcheck_name properties in
   let value_binding = build_value_binding loc vb_pat test_exp in
   let test = Pstr_value (Nonrecursive, [ value_binding ]) in
   { pstr_loc = loc; pstr_desc = test }
