@@ -6,13 +6,14 @@
 %token LCROCH
 %token RCROCH
 %token COMMA
-(* %token SEMICOLON *)
+
+%token EOF
 
 %start<Properties.t> properties
 %%
 
 properties:
-| p=property
+| p=property EOF
 { [p] }
 
 property:

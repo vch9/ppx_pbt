@@ -4,7 +4,7 @@
 }
 
 
-let blank = [' ' '\009']
+let blank = [' ' '\t' '\n']
 let id = ['a'-'z' 'A'-'Z']+['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 rule token = parse
@@ -14,8 +14,11 @@ rule token = parse
 (* Punctuations *)
 | "[" { LCROCH }
 | "]" { RCROCH }
+| "," { COMMA }
 
 (* Regexp *)
 | id as s { ID s }
 
-| _+ as s { syntax_error s }
+| eof { EOF }
+
+| _ as c { syntax_error c }
