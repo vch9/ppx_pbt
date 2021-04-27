@@ -2,7 +2,7 @@
  (name qbc_ppx)
  (public_name qbc.qbc_ppx)
  (kind ppx_rewriter)
- (libraries ppxlib menhirLib)
+ (libraries ppxlib menhirLib qcheck)
  (ppx_runtime_libraries qbc.core)
  (preprocess (pps ppxlib.metaquot)))
 

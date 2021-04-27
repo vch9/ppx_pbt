@@ -26,3 +26,22 @@ and args_to_str = function
   | [ arg ] -> arg
   | arg1 :: arg2 :: args ->
       Format.sprintf "%s ; %s" arg1 (args_to_str (arg2 :: args))
+
+let properties_gens = [ ("commutative", 2) ]
+
+let rec takes_n list n =
+  match (list, n) with
+  | (_, 0) -> []
+  | (x :: xs, n) -> x :: takes_n xs (n - 1)
+  (* Not enough elements in the list:
+     not enough generators for the property
+     TODO: generate human readable error *)
+  | _ -> failwith "TODO ERROR"
+
+let get_gens property_name args =
+  match List.assoc_opt property_name properties_gens with
+  | Some n -> takes_n args n
+  (* A design choice must be choose here,
+     - reject unknown property ?
+     - inline it as a call to a function ? *)
+  | None -> failwith "TODO ERROR"

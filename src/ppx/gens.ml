@@ -1,16 +1,47 @@
 open Ppxlib
 
-let builtin_generators loc = [ ("int", [%expr Qbc.Gens.int]) ]
+let builtin_generators loc x =
+  [ ("int", [%expr Core.Gens.int]) ] |> List.assoc_opt x
 
-(* [int, int] -> (pair int int) *)
-let nest_generators gens =
-  let _n = List.length gens in
-  failwith "TODO"
-
-let replace_gens gen_ids =
+let replace_gens loc gen_ids =
   let replace gen_id =
-    match List.assoc_opt builtin_generators gen_id with
-    | Some _gen -> failwith "TODO"
-    | None -> failwith "TODO"
+    match builtin_generators loc gen_id with
+    | Some gen -> gen
+    | None -> [%expr gen_id]
   in
   List.map replace gen_ids
+
+let split_even_list list =
+  let n = List.length list in
+  let middle = n / 2 in
+  let i = ref (-1) in
+  List.partition
+    (fun _ ->
+      i := !i + 1 ;
+      !i < middle)
+    list
+
+type 'a nested_pairs =
+  | Pair of 'a nested_pairs * 'a nested_pairs
+  | Double of 'a * 'a
+  | Simple of 'a
+
+(* [int, int] -> (pair int int) *)
+let rec nest_generators gens =
+  match List.length gens with
+  | 0 -> failwith "TODO" (* insert unit ? *)
+  | 1 -> Simple (List.hd gens)
+  | 2 -> ( match gens with [ x; y ] -> Double (x, y) | _ -> assert false)
+  | n when n mod 2 = 0 ->
+      let (l1, l2) = split_even_list gens in
+      Pair (nest_generators l1, nest_generators l2)
+  | _ -> Pair (Simple (List.hd gens), nest_generators (List.tl gens))
+
+let rec nested_pairs_to_expr loc = function
+  | Simple expr -> expr
+  | Pair (x, y) ->
+      [%expr
+        QCheck.pair
+          [%e nested_pairs_to_expr loc x]
+          [%e nested_pairs_to_expr loc y]]
+  | Double (x, y) -> [%expr QCheck.pair [%e x] [%e y]]

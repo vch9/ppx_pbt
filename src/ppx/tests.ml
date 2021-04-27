@@ -56,8 +56,18 @@ let build_string loc str =
 
 let default_expr loc = build_string loc "TODO"
 
-(* Build_gens _ *)
-let build_gens _ = failwith "TODO"
+(* Build_gens loc properties
+
+   [gen1] -> gen1
+   [gen1; gen2] -> (pair gen1 gen2)
+   [gen1; gen2; gen3] -> (pair gen1 (pair gen2 gen3))
+   ...
+ *)
+let build_gens loc (name, args) =
+  let gens_id = Properties.get_gens name args in
+  let gens = Gens.replace_gens loc gens_id in
+  let nested_gens = Gens.nest_generators gens in
+  (Nolabel, Gens.nested_pairs_to_expr loc nested_gens)
 
 (* Build_testing _ *)
 let build_testing_fun _ = failwith "TODO"
@@ -67,14 +77,15 @@ let build_testing_fun _ = failwith "TODO"
    Test.make ~name:<fun_name>_is_<name>
    <build_gens>
    <build_testing_fun> *)
-let build_test loc _fun_name qcheck_name _properties =
+let build_test loc _fun_name qcheck_name properties =
   let make_exp =
     build_expression
       loc
       (Pexp_ident { loc; txt = Ldot (Ldot (Lident "QCheck", "Test"), "make") })
   in
   let name_exp = (Labelled "name", build_string loc qcheck_name) in
-  build_expression loc (Pexp_apply (make_exp, [ name_exp ]))
+  let gens_exp = build_gens loc properties in
+  build_expression loc (Pexp_apply (make_exp, [ name_exp; gens_exp ]))
 
 (* Build fun_name (name, args) :
 
