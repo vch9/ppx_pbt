@@ -1,7 +1,7 @@
 (executable
  (name pp)
  (modules pp)
- (libraries ppxlib qbc))
+ (libraries ppxlib qbc_ppx))
 
 (rule
  (targets test.actual.ml)
@@ -21,4 +21,4 @@
  (name test)
  (modules test)
  (libraries data-encoding zarith qcheck)
- (preprocess (pps qbc)))
+ (preprocess (pps qbc_ppx)))

@@ -17,6 +17,7 @@ depends: [
   "dune" {build}
   "ocaml" {>= "4.10.0"}
   "menhir"
+  "qcheck" {>= "0.17.0"}
 ]
 
 build: ["dune" "build" "-p" name "-j" jobs]
