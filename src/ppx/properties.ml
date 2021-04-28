@@ -1,3 +1,6 @@
+open Gens
+open Ppxlib
+
 type property_name = string
 
 type arg = string
@@ -45,3 +48,45 @@ let get_gens property_name args =
      - reject unknown property ?
      - inline it as a call to a function ? *)
   | None -> failwith "TODO ERROR"
+
+let create_assoc_args x =
+  let id = ref 0 in
+  let create_fresh_name i =
+    let x = !i in
+    i := !i + 1 ;
+    "gen_" ^ string_of_int x
+  in
+  let rec aux = function
+    | Pair (x, y) ->
+        let x = aux x in
+        let y = aux y in
+        Pair (x, y)
+    | Double _ ->
+        let x = create_fresh_name id in
+        let y = create_fresh_name id in
+        Double (x, y)
+    | Simple _ -> Simple (create_fresh_name id)
+  in
+  aux x
+
+let build_pat loc pat =
+  { ppat_desc = pat; ppat_loc = loc; ppat_loc_stack = []; ppat_attributes = [] }
+
+let build_var loc var = Ppat_var { txt = var; loc } |> build_pat loc
+
+let pattern_from_gens loc gens =
+  let rec create_pattern loc = function
+    | Pair (x, y) ->
+        [%pat? ([%p create_pattern loc x], [%p create_pattern loc y])]
+    | Double (x, y) ->
+        let arg_x = build_var loc x in
+        let arg_y = build_var loc y in
+        Ppat_tuple [ arg_x; arg_y ] |> build_pat loc
+    | Simple x ->
+        let arg_x = build_var loc x in
+        Ppat_tuple [ arg_x ] |> build_pat loc
+  in
+  let args = create_assoc_args gens in
+  (create_pattern loc args, args)
+
+let call_property _loc _name _args = None

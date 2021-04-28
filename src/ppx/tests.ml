@@ -67,10 +67,14 @@ let build_gens loc (name, args) =
   let gens_id = Properties.get_gens name args in
   let gens = Gens.replace_gens loc gens_id in
   let nested_gens = Gens.nest_generators gens in
-  (Nolabel, Gens.nested_pairs_to_expr loc nested_gens)
+  ((Nolabel, Gens.nested_pairs_to_expr loc nested_gens), nested_gens)
 
 (* Build_testing _ *)
-let build_testing_fun _ = failwith "TODO"
+let build_testing_fun loc nested_gens (name, _args) =
+  let (fun_pattern, args) = Properties.pattern_from_gens loc nested_gens in
+  let _call_property = Properties.call_property loc name args in
+  let fun_expr = [%expr fun [%p fun_pattern] -> false] in
+  (Nolabel, fun_expr)
 
 (* Build_testing_fun loc fun_name properties
 
@@ -84,8 +88,11 @@ let build_test loc _fun_name qcheck_name properties =
       (Pexp_ident { loc; txt = Ldot (Ldot (Lident "QCheck", "Test"), "make") })
   in
   let name_exp = (Labelled "name", build_string loc qcheck_name) in
-  let gens_exp = build_gens loc properties in
-  build_expression loc (Pexp_apply (make_exp, [ name_exp; gens_exp ]))
+  let (gens_exp, nested_gens) = build_gens loc properties in
+  let property_exp = build_testing_fun loc nested_gens properties in
+  build_expression
+    loc
+    (Pexp_apply (make_exp, [ name_exp; gens_exp; property_exp ]))
 
 (* Build fun_name (name, args) :
 
