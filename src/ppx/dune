@@ -3,7 +3,7 @@
  (public_name qbc.qbc_ppx)
  (kind ppx_rewriter)
  (libraries ppxlib menhirLib qcheck)
- (ppx_runtime_libraries qbc.core)
+ (ppx_runtime_libraries qbc.pbt)
  (preprocess (pps ppxlib.metaquot)))
 
 (ocamllex lexer)

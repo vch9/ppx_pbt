@@ -1,0 +1,4 @@
+(library
+ (name pbt)
+ (public_name qbc.pbt)
+ (libraries qcheck))

@@ -1,7 +1,7 @@
 open Ppxlib
 
 let builtin_generators loc x =
-  [ ("int", [%expr Core.Gens.int]) ] |> List.assoc_opt x
+  [ ("int", [%expr Pbt.Gens.int]) ] |> List.assoc_opt x
 
 let replace_gens loc gen_ids =
   let replace gen_id =
