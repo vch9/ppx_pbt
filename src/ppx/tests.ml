@@ -4,8 +4,7 @@ let from_string properties =
   Parser.properties Lexer.token lexbuf_pps
 
 open Ppxlib
-
-(* TODO: better manage failwith "Else" *)
+open Error
 
 let rec get_tested_fun_values_binding values_bindings =
   List.map get_tested_fun_value_binding values_bindings |> List.hd
@@ -15,10 +14,12 @@ and get_tested_fun_value_binding value_binding =
   | Pexp_let (_, values_binding, _) ->
       get_tested_fun_values_binding values_binding
   | Pexp_ident longident_loc -> get_tested_fun_longident_loc longident_loc
-  | _ -> failwith "Else"
+  | _ -> raise (CaseUnsupported "get_tested_fun_value_binding")
 
 and get_tested_fun_longident_loc longident_loc =
-  match longident_loc.txt with Ldot (_, str) -> str | _ -> failwith "Else"
+  match longident_loc.txt with
+  | Ldot (_, str) -> str
+  | _ -> raise (CaseUnsupported "get_tested_fun_longident_loc")
 
 (* Build_gens loc properties
 
