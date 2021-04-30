@@ -1,0 +1,34 @@
+(executable
+ (name pp)
+ (modules pp)
+ (libraries ppxlib qbc_ppx))
+
+; Test commutative
+(rule
+ (targets test_commutative.actual.ml)
+ (deps (:pp pp.exe) (:input test_commutative.ml))
+ (action (run ./%{pp} --impl %{input} -o %{targets})))
+
+(rule
+ (targets test_commutative.expected.format.ml)
+ (deps (:pp pp.exe) (:input test_commutative.expected.ml))
+ (action (run ./%{pp} --impl %{input} -o %{targets})))
+
+(rule
+ (alias runtest)
+ (action (diff test_commutative.expected.format.ml test_commutative.actual.ml)))
+
+; Test local generator 
+(rule
+ (targets test_local_gen.actual.ml)
+ (deps (:pp pp.exe) (:input test_local_gen.ml))
+ (action (run ./%{pp} --impl %{input} -o %{targets})))
+
+(rule
+ (targets test_local_gen.expected.format.ml)
+ (deps (:pp pp.exe) (:input test_local_gen.expected.ml))
+ (action (run ./%{pp} --impl %{input} -o %{targets})))
+
+(rule
+ (alias runtest)
+ (action (diff test_local_gen.expected.format.ml test_local_gen.actual.ml)))
