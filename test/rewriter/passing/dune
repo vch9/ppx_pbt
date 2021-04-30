@@ -32,3 +32,18 @@
 (rule
  (alias runtest)
  (action (diff test_local_gen.expected.format.ml test_local_gen.actual.ml)))
+
+; Test associative
+(rule
+ (targets test_associative.actual.ml)
+ (deps (:pp pp.exe) (:input test_associative.ml))
+ (action (run ./%{pp} --impl %{input} -o %{targets})))
+
+(rule
+ (targets test_associative.expected.format.ml)
+ (deps (:pp pp.exe) (:input test_associative.expected.ml))
+ (action (run ./%{pp} --impl %{input} -o %{targets})))
+
+(rule
+ (alias runtest)
+ (action (diff test_associative.expected.format.ml test_associative.actual.ml)))
