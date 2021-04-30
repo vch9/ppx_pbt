@@ -5,20 +5,20 @@ open Error
 
 let attribute_name = "pbt"
 
-let rec get_structure_item_pbt structure_item =
-  match structure_item.pstr_desc with
-  | Pstr_eval (expression, attributes) ->
-      get_attributes_pbt expression.pexp_attributes
-      @ get_attributes_pbt attributes
+(* get_stri_pbt recursively find attributes in structured items *)
+let rec get_stri_pbt stri =
+  match stri.pstr_desc with
+  | Pstr_eval (_, attributes) -> get_attributes_pbt attributes
   | Pstr_value (_, values_binding) -> get_values_binding_pbt values_binding
   | Pstr_module module_binding ->
       let pmb_expr = module_binding.pmb_expr in
       get_module_expr_pbt pmb_expr
+  (* Default case: attributes are not yet to be found in others structured items *)
   | _ -> []
 
 and get_structure_pbt structures =
   List.fold_left
-    (fun acc structure -> get_structure_item_pbt structure @ acc)
+    (fun acc structure -> get_stri_pbt structure @ acc)
     []
     structures
 
@@ -42,29 +42,27 @@ and get_attributes_pbt attrs =
       else None)
     attrs
 
-let structure_item_contains_pbt structure_item =
-  match get_structure_item_pbt structure_item with [] -> false | _ -> true
+let structure_item_contains_pbt stri = get_stri_pbt stri <> []
 
 (*------ Replace structure item when attached with pbt attribute ------*)
-let rec replace_structure_item structure_item : structure_item list =
-  match structure_item.pstr_desc with
+let rec replace_structure_item stri : structure_item list =
+  match stri.pstr_desc with
   (* -- Recursives cases -- *)
   (* module <Name> = struct .. end *)
   | Pstr_module module_binding ->
       [
         {
-          structure_item with
+          stri with
           pstr_desc = Pstr_module (replace_module_binding module_binding);
         };
       ]
   (* -- Structures items where ppx_pbt is accepted -- *)
   (* let <fname> <args> = <expr> *)
   | Pstr_value _ ->
-      (* TODO: optimize here *)
-      if structure_item_contains_pbt structure_item then
-        Tests.replace_pbt structure_item (get_structure_item_pbt structure_item)
-      else [ structure_item ]
-  | _ -> [ structure_item ]
+      let attributes = get_stri_pbt stri in
+      if attributes <> [] then Tests.replace_pbt stri (get_stri_pbt stri)
+      else [ stri ]
+  | _ -> [ stri ]
 
 and replace_structure structure =
   List.map replace_structure_item structure |> List.concat
