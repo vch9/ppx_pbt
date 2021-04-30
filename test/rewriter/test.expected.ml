@@ -162,8 +162,10 @@ module Arith = struct
 
   let test_add_is_commutative =
     QCheck.Test.make ~name:"add_is_commutative"
-      (QCheck.pair Pbt.Gens.int Pbt.Gens.int) (fun (x, y) ->
-        Pbt.Properties.commutative add x y)
+      (QCheck.pair Pbt.Gens.int Pbt.Gens.int) (fun (gen_0, gen_1) ->
+        Pbt.Properties.commutative add gen_0 gen_1)
+
+  let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_commutative ]
 
   let zero = S.zero
 
