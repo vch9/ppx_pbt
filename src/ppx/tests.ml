@@ -106,14 +106,26 @@ let build fun_name ((name, _args) as properties) =
   let test_exp = build_test loc fun_name qcheck_name properties in
   let value_binding = build_value_binding loc vb_pat test_exp in
   let test = Pstr_value (Nonrecursive, [ value_binding ]) in
-  { pstr_loc = loc; pstr_desc = test }
+  (test_name, { pstr_loc = loc; pstr_desc = test })
+
+let rec build_list loc = function
+  | [] -> [%expr []]
+  | x :: xs -> [%expr [%e x] :: [%e build_list loc xs]]
+
+let exec_tests tests_names =
+  let loc = !Ast_helper.default_loc in
+  let tests =
+    Properties.args_to_expr loc tests_names |> List.map snd |> build_list loc
+  in
+  [%stri let _ = QCheck_runner.run_tests ~verbose:true [%e tests]]
 
 let replace_tests structure_item properties =
   let tests_generated =
     match structure_item.pstr_desc with
     | Pstr_value (_, values_bindings) ->
         let fun_name = get_tested_fun_values_binding values_bindings in
-        List.map (build fun_name) properties
+        let tests = List.map (build fun_name) properties in
+        List.map snd tests @ [ exec_tests (List.map fst tests) ]
     (* TODO: better error management *)
     | _ -> assert false
   in
