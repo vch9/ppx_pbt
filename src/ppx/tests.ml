@@ -20,43 +20,6 @@ and get_tested_fun_value_binding value_binding =
 and get_tested_fun_longident_loc longident_loc =
   match longident_loc.txt with Ldot (_, str) -> str | _ -> failwith "Else"
 
-(* TODO: export helpers to a file *)
-let build_pattern loc test_name =
-  {
-    ppat_desc = Ppat_var { txt = test_name; loc };
-    ppat_loc = loc;
-    ppat_loc_stack = [];
-    ppat_attributes = [];
-  }
-
-let build_defaut_pattern loc =
-  {
-    ppat_desc = Ppat_any;
-    ppat_loc = loc;
-    ppat_loc_stack = [];
-    ppat_attributes = [];
-  }
-
-let build_value_binding loc pat expr =
-  { pvb_pat = pat; pvb_expr = expr; pvb_attributes = []; pvb_loc = loc }
-
-let build_expression loc exp_desc =
-  {
-    pexp_desc = exp_desc;
-    pexp_loc = loc;
-    pexp_loc_stack = [];
-    pexp_attributes = [];
-  }
-
-let build_let loc values_binding exp =
-  let let_exp = Pexp_let (Nonrecursive, values_binding, exp) in
-  build_expression loc let_exp
-
-let build_string loc str =
-  build_expression loc (Pexp_constant (Pconst_string (str, loc, None)))
-
-let default_expr loc = build_string loc "TODO"
-
 (* Build_gens loc properties
 
    [gen1] -> gen1
@@ -83,17 +46,11 @@ let build_testing_fun loc nested_gens fun_name (name, _args) =
    <build_gens>
    <build_testing_fun> *)
 let build_test loc fun_name qcheck_name properties =
-  let make_exp =
-    build_expression
-      loc
-      (Pexp_ident { loc; txt = Ldot (Ldot (Lident "QCheck", "Test"), "make") })
-  in
-  let name_exp = (Labelled "name", build_string loc qcheck_name) in
+  let make_exp = [%expr QCheck.Test.make] in
+  let name_exp = (Labelled "name", Helpers.build_string loc qcheck_name) in
   let (gens_exp, nested_gens) = build_gens loc properties in
   let property_exp = build_testing_fun loc nested_gens fun_name properties in
-  build_expression
-    loc
-    (Pexp_apply (make_exp, [ name_exp; gens_exp; property_exp ]))
+  Helpers.build_apply loc make_exp [ name_exp; gens_exp; property_exp ]
 
 (* Build fun_name (name, args) :
 
@@ -102,20 +59,17 @@ let build fun_name ((name, _args) as properties) =
   let loc = !Ast_helper.default_loc in
   let test_name = Format.sprintf "test_%s_is_%s" fun_name name in
   let qcheck_name = Format.sprintf "%s_is_%s" fun_name name in
-  let vb_pat = build_pattern loc test_name in
+  let vb_pat = Helpers.build_pattern_var loc test_name in
   let test_exp = build_test loc fun_name qcheck_name properties in
-  let value_binding = build_value_binding loc vb_pat test_exp in
+  let value_binding = Helpers.build_value_binding loc vb_pat test_exp in
   let test = Pstr_value (Nonrecursive, [ value_binding ]) in
   (test_name, { pstr_loc = loc; pstr_desc = test })
-
-let rec build_list loc = function
-  | [] -> [%expr []]
-  | x :: xs -> [%expr [%e x] :: [%e build_list loc xs]]
 
 let exec_tests tests_names =
   let loc = !Ast_helper.default_loc in
   let tests =
-    Properties.args_to_expr loc tests_names |> List.map snd |> build_list loc
+    Properties.args_to_expr loc tests_names
+    |> List.map snd |> Helpers.build_list loc
   in
   [%stri let _ = QCheck_runner.run_tests ~verbose:true [%e tests]]
 

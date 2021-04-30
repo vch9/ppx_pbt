@@ -93,23 +93,12 @@ let pattern_from_gens loc gens =
   let args = create_assoc_args gens in
   (create_pattern loc args, args)
 
-(* TODO: export helpers to a file *)
-let build_expression loc exp_desc =
-  {
-    pexp_desc = exp_desc;
-    pexp_loc = loc;
-    pexp_loc_stack = [];
-    pexp_attributes = [];
-  }
-
 let args_to_expr loc args =
-  let f x =
-    (Nolabel, build_expression loc (Pexp_ident { txt = Lident x; loc }))
-  in
+  let f x = (Nolabel, Helpers.build_ident loc x) in
   List.map f args
 
 let call_property loc fun_name name args =
   let args = fun_name :: Gens.nested_pairs_to_list args |> args_to_expr loc in
   match builtin_properties loc name with
-  | Some fun_expr -> build_expression loc (Pexp_apply (fun_expr, args))
+  | Some fun_expr -> Helpers.build_apply loc fun_expr args
   | None -> failwith "TODO"
