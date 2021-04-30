@@ -1,13 +1,27 @@
 open Ppxlib
 
+(* Exhaustive list of builtin generators
+   If the function returns None -> the generator must be provided by the user *)
 let builtin_generators loc x =
   [ ("int", [%expr Pbt.Gens.int]) ] |> List.assoc_opt x
 
+(* Either replace gen_ids by builtin generators or with identifiers to
+   locally provided generators
+
+   example:
+
+   [@@pbt {| commutative[int, my_gen_int] |}]
+   =>
+   QCheck.pair (Pbt.Properties.int, my_gen_int)
+
+   int belongs to builtin generators and is rewrited as the reference to the
+   generator in Pbt.Properties module, whereas my_gen_int needs to be available
+   at current scope *)
 let replace_gens loc gen_ids =
   let replace gen_id =
     match builtin_generators loc gen_id with
     | Some gen -> gen
-    | None -> [%expr gen_id]
+    | None -> Helpers.build_ident loc gen_id
   in
   List.map replace gen_ids
 
