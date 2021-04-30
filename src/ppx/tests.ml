@@ -20,6 +20,7 @@ and get_tested_fun_value_binding value_binding =
 and get_tested_fun_longident_loc longident_loc =
   match longident_loc.txt with Ldot (_, str) -> str | _ -> failwith "Else"
 
+(* TODO: export helpers to a file *)
 let build_pattern loc test_name =
   {
     ppat_desc = Ppat_var { txt = test_name; loc };
@@ -70,10 +71,10 @@ let build_gens loc (name, args) =
   ((Nolabel, Gens.nested_pairs_to_expr loc nested_gens), nested_gens)
 
 (* Build_testing _ *)
-let build_testing_fun loc nested_gens (name, _args) =
+let build_testing_fun loc nested_gens fun_name (name, _args) =
   let (fun_pattern, args) = Properties.pattern_from_gens loc nested_gens in
-  let _call_property = Properties.call_property loc name args in
-  let fun_expr = [%expr fun [%p fun_pattern] -> false] in
+  let call_property = Properties.call_property loc fun_name name args in
+  let fun_expr = [%expr fun [%p fun_pattern] -> [%e call_property]] in
   (Nolabel, fun_expr)
 
 (* Build_testing_fun loc fun_name properties
@@ -81,7 +82,7 @@ let build_testing_fun loc nested_gens (name, _args) =
    Test.make ~name:<fun_name>_is_<name>
    <build_gens>
    <build_testing_fun> *)
-let build_test loc _fun_name qcheck_name properties =
+let build_test loc fun_name qcheck_name properties =
   let make_exp =
     build_expression
       loc
@@ -89,7 +90,7 @@ let build_test loc _fun_name qcheck_name properties =
   in
   let name_exp = (Labelled "name", build_string loc qcheck_name) in
   let (gens_exp, nested_gens) = build_gens loc properties in
-  let property_exp = build_testing_fun loc nested_gens properties in
+  let property_exp = build_testing_fun loc nested_gens fun_name properties in
   build_expression
     loc
     (Pexp_apply (make_exp, [ name_exp; gens_exp; property_exp ]))

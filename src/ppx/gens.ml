@@ -45,3 +45,11 @@ let rec nested_pairs_to_expr loc = function
           [%e nested_pairs_to_expr loc x]
           [%e nested_pairs_to_expr loc y]]
   | Double (x, y) -> [%expr QCheck.pair [%e x] [%e y]]
+
+let rec nested_pairs_to_list = function
+  | Simple x -> [ x ]
+  | Double (x, y) -> [ x; y ]
+  | Pair (x, y) ->
+      let left = nested_pairs_to_list x in
+      let right = nested_pairs_to_list y in
+      left @ right

@@ -32,6 +32,10 @@ and args_to_str = function
 
 let properties_gens = [ ("commutative", 2) ]
 
+(* TODO: if it returns None, should we create a Pbt.Properties.x ? *)
+let builtin_properties loc x =
+  [ ("commutative", [%expr Pbt.Properties.commutative]) ] |> List.assoc_opt x
+
 let rec takes_n list n =
   match (list, n) with
   | (_, 0) -> []
@@ -89,4 +93,23 @@ let pattern_from_gens loc gens =
   let args = create_assoc_args gens in
   (create_pattern loc args, args)
 
-let call_property _loc _name _args = None
+(* TODO: export helpers to a file *)
+let build_expression loc exp_desc =
+  {
+    pexp_desc = exp_desc;
+    pexp_loc = loc;
+    pexp_loc_stack = [];
+    pexp_attributes = [];
+  }
+
+let args_to_expr loc args =
+  let f x =
+    (Nolabel, build_expression loc (Pexp_ident { txt = Lident x; loc }))
+  in
+  List.map f args
+
+let call_property loc fun_name name args =
+  let args = fun_name :: Gens.nested_pairs_to_list args |> args_to_expr loc in
+  match builtin_properties loc name with
+  | Some fun_expr -> build_expression loc (Pexp_apply (fun_expr, args))
+  | None -> failwith "TODO"
