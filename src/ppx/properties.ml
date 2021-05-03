@@ -111,9 +111,7 @@ let pattern_from_gens loc gens =
         let arg_x = Helpers.build_pattern_var loc x in
         let arg_y = Helpers.build_pattern_var loc y in
         Ppat_tuple [ arg_x; arg_y ] |> Helpers.build_pattern loc
-    | Simple x ->
-        let arg_x = Helpers.build_pattern_var loc x in
-        Ppat_tuple [ arg_x ] |> Helpers.build_pattern loc
+    | Simple x -> Helpers.build_pattern_var loc x
   in
   let args = create_assoc_args gens in
   (* Pattern is returned with the assoc between generators and the identifier
