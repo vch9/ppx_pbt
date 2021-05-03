@@ -6,15 +6,30 @@ let from_string properties =
 open Ppxlib
 open Error
 
+let get_tested_fun_pattern pattern =
+  match pattern.ppat_desc with
+  | Ppat_var { txt = str; _ } -> Some str
+  | _ -> None
+
+(* Extract fun name we want to test *)
 let rec get_tested_fun_values_binding values_bindings =
+  (* A structured item should contains only one pbt attribute *)
   List.map get_tested_fun_value_binding values_bindings |> List.hd
 
-and get_tested_fun_value_binding value_binding =
-  match value_binding.pvb_expr.pexp_desc with
+and get_tested_fun_expression_desc expr_desc =
+  match expr_desc with
   | Pexp_let (_, values_binding, _) ->
       get_tested_fun_values_binding values_binding
   | Pexp_ident longident_loc -> get_tested_fun_longident_loc longident_loc
-  | _ -> raise (CaseUnsupported "get_tested_fun_value_binding")
+  | _ -> raise (CaseUnsupported "get_tested_fun_expression_desc")
+
+and get_tested_fun_value_binding value_binding =
+  match get_tested_fun_pattern value_binding.pvb_pat with
+  (* In case of let f <pattern> = <expr>, the function name is located inside
+     the value_binding.pattern *)
+  | Some str -> str
+  (* Otherwise, we look for the function name in the expression *)
+  | None -> get_tested_fun_expression_desc value_binding.pvb_expr.pexp_desc
 
 and get_tested_fun_longident_loc longident_loc =
   match longident_loc.txt with
