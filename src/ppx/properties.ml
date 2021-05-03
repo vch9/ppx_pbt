@@ -46,31 +46,35 @@ let builtin_properties x =
       { expr = [%expr Pbt.Properties.commutative]; n_gens = 2; n_args = 0 } );
     ( "associative",
       { expr = [%expr Pbt.Properties.associative]; n_gens = 3; n_args = 0 } );
+    ( "neutral_left",
+      { expr = [%expr Pbt.Properties.neutral_left]; n_gens = 1; n_args = 1 } );
+    ( "neutral_right",
+      { expr = [%expr Pbt.Properties.neutral_right]; n_gens = 1; n_args = 1 } );
+    ( "neutrals",
+      { expr = [%expr Pbt.Properties.neutrals]; n_gens = 1; n_args = 1 } );
   ]
   |> List.assoc_opt x
 
-let rec takes_n list n =
-  match (list, n) with
-  | (_, 0) -> []
-  | (x :: xs, n) -> x :: takes_n xs (n - 1)
-  | _ -> assert false
-(* The function is called only if there's enough arguments *)
+(* We check if the number of generator from the payload arguments is equal
+   to the required number.
 
-(* We get generators from the payload arguments
-
-   [@@pbt {| property_name[arg0, arg1, .., argN] |} ]
+   [@@pbt {| property_name[gen0, gen1, .., genN] |} ]
 
    To each property_name is attached a number of required generators,
-   see builtin_properties
-
-   If the property needs n generators, n are taken from the list of arguments.
-   Otherwise, an exception is raised *)
-let get_gens property_name args =
+   see builtin_properties *)
+let check_gens property_name gens =
   match builtin_properties property_name with
   | Some { n_gens = n; _ } ->
+      let len = List.length gens in
+      if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
+  | None -> raise (PropertyNotSupported property_name)
+
+(* Same as check_gens with args *)
+let check_args property_name args =
+  match builtin_properties property_name with
+  | Some { n_args = n; _ } ->
       let len = List.length args in
-      if n > len then raise (PropertyGeneratorsMissing (property_name, n, len))
-      else takes_n args n
+      if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
   | None -> raise (PropertyNotSupported property_name)
 
 (* Applied arguments depends on the given generators
@@ -125,8 +129,10 @@ let args_to_expr loc args =
 (* Build the call to the property intented to be tested
 
    (fun .. -> Pbt.Property.property_name gen0 gen1 ..) *)
-let call_property loc fun_name name args =
-  let args = fun_name :: Gens.nested_pairs_to_list args |> args_to_expr loc in
+let call_property loc fun_name (name, args, gens) =
+  let args =
+    fun_name :: args @ Gens.nested_pairs_to_list gens |> args_to_expr loc
+  in
   match builtin_properties name with
   | Some { expr = fun_expr; _ } -> Helpers.build_apply loc fun_expr args
   | None -> raise (PropertyNotSupported name)

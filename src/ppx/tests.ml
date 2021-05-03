@@ -44,15 +44,18 @@ and get_tested_fun_longident_loc longident_loc =
    ...
  *)
 let build_gens loc (name, _args, gens) =
-  let gens_id = Properties.get_gens name gens in
-  let gens = Gens.replace_gens loc gens_id in
+  let _ = Properties.check_gens name gens in
+  let gens = Gens.replace_gens loc gens in
   let nested_gens = Gens.nest_generators gens in
   ((Nolabel, Gens.nested_pairs_to_expr loc nested_gens), nested_gens)
 
 (* Build_testing _ *)
-let build_testing_fun loc nested_gens fun_name (name, _args, _gens) =
-  let (fun_pattern, args) = Properties.pattern_from_gens loc nested_gens in
-  let call_property = Properties.call_property loc fun_name name args in
+let build_testing_fun loc nested_gens fun_name (name, args, _) =
+  let _ = Properties.check_args name args in
+  let (fun_pattern, gens) = Properties.pattern_from_gens loc nested_gens in
+  let call_property =
+    Properties.call_property loc fun_name (name, args, gens)
+  in
   let fun_expr = [%expr fun [%p fun_pattern] -> [%e call_property]] in
   (Nolabel, fun_expr)
 
