@@ -162,7 +162,7 @@ module Arith = struct
 
   let add =
     S.add
-    [@@pbt {| neutral_left{zero}[int]; neutral_right{zero}[int] |}]
+    [@@pbt {| neutral_left{zero}[uint]; neutral_right{zero}[uint] |}]
 
   let min = S.min
 

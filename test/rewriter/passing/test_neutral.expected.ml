@@ -163,11 +163,11 @@ module Arith = struct
   let add = S.add
 
   let test_add_is_neutral_left =
-    QCheck.Test.make ~name:"add_is_neutral_left" Pbt.Gens.int (fun gen_0 ->
+    QCheck.Test.make ~name:"add_is_neutral_left" Pbt.Gens.uint (fun gen_0 ->
         Pbt.Properties.neutral_left add zero gen_0)
 
   let test_add_is_neutral_right =
-    QCheck.Test.make ~name:"add_is_neutral_right" Pbt.Gens.int (fun gen_0 ->
+    QCheck.Test.make ~name:"add_is_neutral_right" Pbt.Gens.uint (fun gen_0 ->
         Pbt.Properties.neutral_right add zero gen_0)
 
   let _ =
