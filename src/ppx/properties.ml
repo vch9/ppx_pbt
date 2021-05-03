@@ -1,5 +1,6 @@
 open Gens
 open Ppxlib
+open Error
 
 type property_name = string
 
@@ -30,13 +31,16 @@ and args_to_str = function
   | arg1 :: arg2 :: args ->
       Format.sprintf "%s ; %s" arg1 (args_to_str (arg2 :: args))
 
-let properties_gens = [ ("commutative", 2); ("associative", 3) ]
+(* Builtin properties contains two fields:
+   expr <= Ast.expression calling the Pbt.Properties.f
+   n_gens <= Number of generators required to call Pbt.Properties f *)
+type builtin_properties = { expr : expression; n_gens : int }
 
-(* TODO: if it returns None, should we create a Pbt.Properties.x ? *)
-let builtin_properties loc x =
+let builtin_properties x =
+  let loc = !Ast_helper.default_loc in
   [
-    ("commutative", [%expr Pbt.Properties.commutative]);
-    ("associative", [%expr Pbt.Properties.associative]);
+    ("commutative", { expr = [%expr Pbt.Properties.commutative]; n_gens = 2 });
+    ("associative", { expr = [%expr Pbt.Properties.associative]; n_gens = 3 });
   ]
   |> List.assoc_opt x
 
@@ -44,30 +48,46 @@ let rec takes_n list n =
   match (list, n) with
   | (_, 0) -> []
   | (x :: xs, n) -> x :: takes_n xs (n - 1)
-  (* Not enough elements in the list:
-     not enough generators for the property
-     TODO: generate human readable error *)
-  | _ -> failwith "TODO ERROR"
+  | _ -> assert false
+(* The function is called only if there's enough arguments *)
 
+(* We get generators from the payload arguments
+
+   [@@pbt {| property_name[arg0, arg1, .., argN] |} ]
+
+   To each property_name is attached a number of required generators,
+   see builtin_properties
+
+   If the property needs n generators, n are taken from the list of arguments.
+   Otherwise, an exception is raised *)
 let get_gens property_name args =
-  match List.assoc_opt property_name properties_gens with
-  | Some n -> takes_n args n
-  (* A design choice must be choose here,
-     - reject unknown property ?
-     - inline it as a call to a function ? *)
-  | None -> failwith "TODO ERROR"
+  match builtin_properties property_name with
+  | Some { n_gens = n; _ } ->
+      let len = List.length args in
+      if n > len then raise (PropertyGeneratorsMissing (property_name, n, len))
+      else takes_n args n
+  | None -> raise (PropertyNotSupported property_name)
 
-let create_assoc_args x =
+(* Applied arguments depends on the given generators
+
+   example:
+
+   (fun gen0 -> <property> <tested_fun> gen0)
+   (fun (gen0, gen1) -> <property> <tested_fun> gen0 gen1)
+   (fun (gen0, (gen1, gen2)) -> <property> <tested_fun> gen0 gen1 gen2) *)
+let create_assoc_args gens =
   let id = ref 0 in
   let create_fresh_name i =
     let x = !i in
     i := !i + 1 ;
     "gen_" ^ string_of_int x
   in
-  let rec aux = function
+  (* Replace_by_id replace the generators pattern by identifiers refering to the
+     function pattern *)
+  let rec replace_by_id = function
     | Pair (x, y) ->
-        let x = aux x in
-        let y = aux y in
+        let x = replace_by_id x in
+        let y = replace_by_id y in
         Pair (x, y)
     | Double _ ->
         let x = create_fresh_name id in
@@ -75,34 +95,35 @@ let create_assoc_args x =
         Double (x, y)
     | Simple _ -> Simple (create_fresh_name id)
   in
-  aux x
+  replace_by_id gens
 
-let build_pat loc pat =
-  { ppat_desc = pat; ppat_loc = loc; ppat_loc_stack = []; ppat_attributes = [] }
-
-let build_var loc var = Ppat_var { txt = var; loc } |> build_pat loc
-
+(* Transform the nested_pairs from Generators into Pattern.tuple *)
 let pattern_from_gens loc gens =
   let rec create_pattern loc = function
     | Pair (x, y) ->
         [%pat? ([%p create_pattern loc x], [%p create_pattern loc y])]
     | Double (x, y) ->
-        let arg_x = build_var loc x in
-        let arg_y = build_var loc y in
-        Ppat_tuple [ arg_x; arg_y ] |> build_pat loc
+        let arg_x = Helpers.build_pattern_var loc x in
+        let arg_y = Helpers.build_pattern_var loc y in
+        Ppat_tuple [ arg_x; arg_y ] |> Helpers.build_pattern loc
     | Simple x ->
-        let arg_x = build_var loc x in
-        Ppat_tuple [ arg_x ] |> build_pat loc
+        let arg_x = Helpers.build_pattern_var loc x in
+        Ppat_tuple [ arg_x ] |> Helpers.build_pattern loc
   in
   let args = create_assoc_args gens in
+  (* Pattern is returned with the assoc between generators and the identifier
+     given in create_assoc_args *)
   (create_pattern loc args, args)
 
 let args_to_expr loc args =
   let f x = (Nolabel, Helpers.build_ident loc x) in
   List.map f args
 
+(* Build the call to the property intented to be tested
+
+   (fun .. -> Pbt.Property.property_name gen0 gen1 ..) *)
 let call_property loc fun_name name args =
   let args = fun_name :: Gens.nested_pairs_to_list args |> args_to_expr loc in
-  match builtin_properties loc name with
-  | Some fun_expr -> Helpers.build_apply loc fun_expr args
-  | None -> failwith "TODO call_property"
+  match builtin_properties name with
+  | Some { expr = fun_expr; _ } -> Helpers.build_apply loc fun_expr args
+  | None -> raise (PropertyNotSupported name)
