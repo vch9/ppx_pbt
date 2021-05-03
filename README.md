@@ -30,3 +30,10 @@ let _ =
 	        (pair Gens.int Gens.int)
 			(fun (x,y) -> Laws.commutative add x y)
 ```
+
+Arguments can also be passed throught properties:
+```ocaml
+let zero = 0
+let add x y = x + y
+[@@pbt {| commutative{zero}[int] |}]
+```
