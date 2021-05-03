@@ -60,7 +60,6 @@ type 'a nested_pairs =
    nest_generators [a;b;c;d] => Pair (Double a b) (Double c d)
 
    TODO:
-     - even list are tested but not odd list
      - implement and test empty list *)
 let rec nest_generators gens =
   match gens with
