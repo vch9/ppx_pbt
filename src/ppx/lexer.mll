@@ -15,6 +15,9 @@ rule token = parse
 | "[" { LCROCH }
 | "]" { RCROCH }
 | "," { COMMA }
+| "{" { LBRACKET }
+| "}" { RBRACKET }
+| ";" { SEMICOLON }
 
 (* Regexp *)
 | id as s { ID s }

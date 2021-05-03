@@ -43,14 +43,14 @@ and get_tested_fun_longident_loc longident_loc =
    [gen1; gen2; gen3] -> (pair gen1 (pair gen2 gen3))
    ...
  *)
-let build_gens loc (name, args) =
-  let gens_id = Properties.get_gens name args in
+let build_gens loc (name, _args, gens) =
+  let gens_id = Properties.get_gens name gens in
   let gens = Gens.replace_gens loc gens_id in
   let nested_gens = Gens.nest_generators gens in
   ((Nolabel, Gens.nested_pairs_to_expr loc nested_gens), nested_gens)
 
 (* Build_testing _ *)
-let build_testing_fun loc nested_gens fun_name (name, _args) =
+let build_testing_fun loc nested_gens fun_name (name, _args, _gens) =
   let (fun_pattern, args) = Properties.pattern_from_gens loc nested_gens in
   let call_property = Properties.call_property loc fun_name name args in
   let fun_expr = [%expr fun [%p fun_pattern] -> [%e call_property]] in
@@ -71,7 +71,7 @@ let build_test loc fun_name qcheck_name properties =
 (* Build fun_name (name, args) :
 
    let test_<fun_name>_is_<name> = <build_test> *)
-let build fun_name ((name, _args) as properties) =
+let build fun_name ((name, _args, _gens) as properties) =
   let loc = !Ast_helper.default_loc in
   let test_name = Format.sprintf "test_%s_is_%s" fun_name name in
   let qcheck_name = Format.sprintf "%s_is_%s" fun_name name in

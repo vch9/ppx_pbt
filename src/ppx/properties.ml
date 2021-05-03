@@ -6,7 +6,9 @@ type property_name = string
 
 type arg = string
 
-type property = property_name * arg list
+type gen = string
+
+type property = property_name * arg list * arg list
 
 type properties = property list
 
@@ -22,8 +24,8 @@ let rec properties_to_str = function
         (properties_to_str (p2 :: pps))
   | [] -> assert false
 
-and property_to_str (name, args) =
-  Format.sprintf "%s[%s]" name (args_to_str args)
+and property_to_str (name, args, gens) =
+  Format.sprintf "%s{%s}[%s]" name (args_to_str gens) (args_to_str args)
 
 and args_to_str = function
   | [] -> ""
@@ -33,14 +35,17 @@ and args_to_str = function
 
 (* Builtin properties contains two fields:
    expr <= Ast.expression calling the Pbt.Properties.f
-   n_gens <= Number of generators required to call Pbt.Properties f *)
-type builtin_properties = { expr : expression; n_gens : int }
+   n_gens <= Number of generators required to call Pbt.Properties f
+   n_args <= Number of arguments required to call Pbt.Properties f *)
+type builtin_properties = { expr : expression; n_gens : int; n_args : int }
 
 let builtin_properties x =
   let loc = !Ast_helper.default_loc in
   [
-    ("commutative", { expr = [%expr Pbt.Properties.commutative]; n_gens = 2 });
-    ("associative", { expr = [%expr Pbt.Properties.associative]; n_gens = 3 });
+    ( "commutative",
+      { expr = [%expr Pbt.Properties.commutative]; n_gens = 2; n_args = 0 } );
+    ( "associative",
+      { expr = [%expr Pbt.Properties.associative]; n_gens = 3; n_args = 0 } );
   ]
   |> List.assoc_opt x
 
