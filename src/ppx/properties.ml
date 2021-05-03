@@ -30,11 +30,15 @@ and args_to_str = function
   | arg1 :: arg2 :: args ->
       Format.sprintf "%s ; %s" arg1 (args_to_str (arg2 :: args))
 
-let properties_gens = [ ("commutative", 2) ]
+let properties_gens = [ ("commutative", 2); ("associative", 3) ]
 
 (* TODO: if it returns None, should we create a Pbt.Properties.x ? *)
 let builtin_properties loc x =
-  [ ("commutative", [%expr Pbt.Properties.commutative]) ] |> List.assoc_opt x
+  [
+    ("commutative", [%expr Pbt.Properties.commutative]);
+    ("associative", [%expr Pbt.Properties.associative]);
+  ]
+  |> List.assoc_opt x
 
 let rec takes_n list n =
   match (list, n) with
@@ -101,4 +105,4 @@ let call_property loc fun_name name args =
   let args = fun_name :: Gens.nested_pairs_to_list args |> args_to_expr loc in
   match builtin_properties loc name with
   | Some fun_expr -> Helpers.build_apply loc fun_expr args
-  | None -> failwith "TODO"
+  | None -> failwith "TODO call_property"
