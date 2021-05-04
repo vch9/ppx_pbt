@@ -2,14 +2,9 @@ let output_stanzas filename =
   let base = Filename.remove_extension filename in
   Printf.printf
     {|
-(library
- (name %s)
- (modules %s)
- (libraries qbc_ppx))
-
 (rule
  (targets %s.expected.format)
- (deps (:pp pp.exe) (:input %s.expected))
+ (deps (:pp pp.exe) (:input %s.expected.ml))
  (action (bash "./%%{pp} --impl %%{input} -o %%{targets}")))
 
 (rule
@@ -21,6 +16,12 @@ let output_stanzas filename =
  (alias runtest)
  (deps (:actual %s.actual) (:expected %s.expected.format))
  (action (diff %%{expected} %%{actual})))
+
+(test
+ (name %s)
+ (modules %s)
+ (libraries zarith data-encoding)
+ (preprocess (pps qbc_ppx)))
 |}
     base
     base
@@ -34,7 +35,10 @@ let output_stanzas filename =
 let is_error_test = function
   | "pp.ml" -> false
   | "gen_dune_rules.ml" -> false
-  | filename -> Filename.check_suffix filename ".ml"
+  | filename ->
+      Filename.check_suffix filename ".ml"
+      && (not (Filename.check_suffix filename ".expected.ml"))
+      && not (Filename.check_suffix filename ".pp.expected.ml")
 
 let () =
   Sys.readdir "." |> Array.to_list |> List.sort String.compare
