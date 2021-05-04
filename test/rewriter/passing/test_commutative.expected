@@ -158,22 +158,17 @@ module Arith = struct
 
   let sub = S.sub
 
+  let add = S.add [@@pbt {| commutative[int, int] |}]
+
+  let test_add_is_commutative =
+    QCheck.Test.make
+      ~name:"add_is_commutative"
+      (QCheck.pair Pbt.Gens.int Pbt.Gens.int)
+      (fun (gen_0, gen_1) -> Pbt.Properties.commutative add gen_0 gen_1)
+
+  let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_commutative ]
+
   let zero = S.zero
-
-  let add = S.add
-
-  let test_add_is_neutral_left =
-    QCheck.Test.make ~name:"add_is_neutral_left" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.neutral_left add zero gen_0)
-
-  let test_add_is_neutral_right =
-    QCheck.Test.make ~name:"add_is_neutral_right" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.neutral_right add zero gen_0)
-
-  let _ =
-    QCheck_runner.run_tests
-      ~verbose:true
-      [ test_add_is_neutral_left; test_add_is_neutral_right ]
 
   let min = S.min
 

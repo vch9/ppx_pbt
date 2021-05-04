@@ -1,4 +1,4 @@
-let add x y = x + y
+let add x y = x + y [@@pbt {| associative[int, int, int] |}]
 
 let test_add_is_associative =
   QCheck.Test.make

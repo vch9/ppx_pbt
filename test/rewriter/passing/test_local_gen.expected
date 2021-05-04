@@ -160,7 +160,7 @@ module Arith = struct
 
   let my_gen_int = QCheck.int
 
-  let add = S.add
+  let add = S.add [@@pbt {| commutative[int, my_gen_int] |}]
 
   let test_add_is_commutative =
     QCheck.Test.make

@@ -3,62 +3,22 @@
  (modules pp)
  (libraries ppxlib qbc_ppx))
 
-; Test commutative
-(rule
- (targets test_commutative.actual.ml)
- (deps (:pp pp.exe) (:input test_commutative.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
+(include dune.inc)
+
+(executable
+ (name gen_dune_rules)
+ (modules gen_dune_rules))
 
 (rule
- (targets test_commutative.expected.format.ml)
- (deps (:pp pp.exe) (:input test_commutative.expected.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
-
-(rule
- (alias runtest)
- (action (diff test_commutative.expected.format.ml test_commutative.actual.ml)))
-
-; Test local generator 
-(rule
- (targets test_local_gen.actual.ml)
- (deps (:pp pp.exe) (:input test_local_gen.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
-
-(rule
- (targets test_local_gen.expected.format.ml)
- (deps (:pp pp.exe) (:input test_local_gen.expected.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
+ (targets dune.inc.gen)
+ (deps
+  (:gen gen_dune_rules.exe)
+  (source_tree .))
+ (action
+  (with-stdout-to
+    %{targets}
+   (run %{gen}))))
 
 (rule
  (alias runtest)
- (action (diff test_local_gen.expected.format.ml test_local_gen.actual.ml)))
-
-; Test associative
-(rule
- (targets test_associative.actual.ml)
- (deps (:pp pp.exe) (:input test_associative.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
-
-(rule
- (targets test_associative.expected.format.ml)
- (deps (:pp pp.exe) (:input test_associative.expected.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
-
-(rule
- (alias runtest)
- (action (diff test_associative.expected.format.ml test_associative.actual.ml)))
-
-; Test neutrals
-(rule
- (targets test_neutral.actual.ml)
- (deps (:pp pp.exe) (:input test_neutral.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
-
-(rule
- (targets test_neutral.expected.format.ml)
- (deps (:pp pp.exe) (:input test_neutral.expected.ml))
- (action (run ./%{pp} --impl %{input} -o %{targets})))
-
-(rule
- (alias runtest)
- (action (diff test_neutral.expected.format.ml test_neutral.actual.ml)))
+ (action (diff dune.inc dune.inc.gen)))
