@@ -53,6 +53,7 @@ let builtin_properties x =
     ( "neutrals",
       { expr = [%expr Pbt.Properties.neutrals]; n_gens = 1; n_args = 1 } );
     ("capped", { expr = [%expr Pbt.Properties.capped]; n_gens = 2; n_args = 1 });
+    ("eq_res", { expr = [%expr Pbt.Properties.eq_res]; n_gens = 2; n_args = 1 });
   ]
   |> List.assoc_opt x
 
