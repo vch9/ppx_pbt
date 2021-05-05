@@ -38,7 +38,7 @@ let is_error_test = function
   | filename ->
       Filename.check_suffix filename ".ml"
       && (not (Filename.check_suffix filename ".expected.ml"))
-      && not (Filename.check_suffix filename ".pp.expected.ml")
+      && not (Filename.check_suffix filename ".pp.ml")
 
 let () =
   Sys.readdir "." |> Array.to_list |> List.sort String.compare
