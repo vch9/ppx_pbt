@@ -126,6 +126,27 @@
  (preprocess (pps qbc_ppx)))
 
 (rule
+ (targets test_saturing.expected.format)
+ (deps (:pp pp.exe) (:input test_saturing.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_saturing.actual)
+ (deps (:pp pp.exe) (:input test_saturing.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_saturing.actual) (:expected test_saturing.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_saturing)
+ (modules test_saturing)
+ (libraries zarith data-encoding)
+ (preprocess (pps qbc_ppx)))
+
+(rule
  (targets test_unknown_property.expected.format)
  (deps (:pp pp.exe) (:input test_unknown_property.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
