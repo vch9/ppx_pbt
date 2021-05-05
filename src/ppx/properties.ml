@@ -52,7 +52,7 @@ let builtin_properties x =
       { expr = [%expr Pbt.Properties.neutral_right]; n_gens = 1; n_args = 1 } );
     ( "neutrals",
       { expr = [%expr Pbt.Properties.neutrals]; n_gens = 1; n_args = 1 } );
-    ("capped", { expr = [%expr Pbt.Properties.capped]; n_gens = 2; n_args = 1 });
+    ("capped", { expr = [%expr Pbt.Properties.capped]; n_gens = 1; n_args = 1 });
     ( "floored_left",
       { expr = [%expr Pbt.Properties.floored_left]; n_gens = 1; n_args = 1 } );
     ("eq_res", { expr = [%expr Pbt.Properties.eq_res]; n_gens = 2; n_args = 1 });

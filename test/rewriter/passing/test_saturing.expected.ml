@@ -105,13 +105,11 @@ module Saturating_repr = struct
         if small_enough x && small_enough y then x * y
         else if Int.(y > saturated / x) then saturated
         else x * y
-    [@@pbt {| capped{saturated}[uint, uint]; zeros{zero}[uint] |}]
+    [@@pbt {| capped{saturated}[uint]; zeros{zero}[uint] |}]
 
   let test_mul_is_capped =
-    QCheck.Test.make
-      ~name:"mul_is_capped"
-      (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
-      (fun (gen_0, gen_1) -> Pbt.Properties.capped mul saturated gen_0 gen_1)
+    QCheck.Test.make ~name:"mul_is_capped" Pbt.Gens.uint (fun gen_0 ->
+        Pbt.Properties.capped mul saturated gen_0)
 
   let test_mul_is_zeros =
     QCheck.Test.make ~name:"mul_is_zeros" Pbt.Gens.uint (fun gen_0 ->
@@ -135,18 +133,15 @@ module Saturating_repr = struct
     else if small_enough y then x * y
     else if Int.(y > saturated / x) then saturated
     else x * y
-    [@@pbt {| zeros{zero}[uint]; capped{saturated}[uint, uint] |}]
+    [@@pbt {| zeros{zero}[uint]; capped{saturated}[uint] |}]
 
   let test_scale_fast_is_zeros =
     QCheck.Test.make ~name:"scale_fast_is_zeros" Pbt.Gens.uint (fun gen_0 ->
         Pbt.Properties.zeros scale_fast zero gen_0)
 
   let test_scale_fast_is_capped =
-    QCheck.Test.make
-      ~name:"scale_fast_is_capped"
-      (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
-      (fun (gen_0, gen_1) ->
-        Pbt.Properties.capped scale_fast saturated gen_0 gen_1)
+    QCheck.Test.make ~name:"scale_fast_is_capped" Pbt.Gens.uint (fun gen_0 ->
+        Pbt.Properties.capped scale_fast saturated gen_0)
 
   let _ =
     QCheck_runner.run_tests
@@ -156,17 +151,15 @@ module Saturating_repr = struct
   let add x y =
     let z = x + y in
     if z >= 0 then z else saturated
-    [@@pbt {| neutrals{zero}[uint]; capped{saturated}[uint, uint] |}]
+    [@@pbt {| neutrals{zero}[uint]; capped{saturated}[uint] |}]
 
   let test_add_is_neutrals =
     QCheck.Test.make ~name:"add_is_neutrals" Pbt.Gens.uint (fun gen_0 ->
         Pbt.Properties.neutrals add zero gen_0)
 
   let test_add_is_capped =
-    QCheck.Test.make
-      ~name:"add_is_capped"
-      (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
-      (fun (gen_0, gen_1) -> Pbt.Properties.capped add saturated gen_0 gen_1)
+    QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
+        Pbt.Properties.capped add saturated gen_0)
 
   let _ =
     QCheck_runner.run_tests

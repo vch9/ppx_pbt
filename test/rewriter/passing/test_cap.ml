@@ -117,7 +117,7 @@ module Saturating_repr = struct
   let add x y =
     let z = x + y in
     if z >= 0 then z else saturated
-    [@@pbt {| capped{saturated}[int, int] |}]
+    [@@pbt {| capped{saturated}[int] |}]
 
   let sub x y = Int.max (x - y) 0
 
