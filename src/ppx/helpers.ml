@@ -30,5 +30,3 @@ let build_apply loc to_apply args =
 
 let build_ident loc x =
   build_expression loc @@ Pexp_ident { txt = Lident x; loc }
-
-let default_expr loc = build_string loc "TODO"
