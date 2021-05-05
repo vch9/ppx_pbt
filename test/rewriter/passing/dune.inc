@@ -103,3 +103,24 @@
  (modules test_neutral)
  (libraries zarith data-encoding)
  (preprocess (pps qbc_ppx)))
+
+(rule
+ (targets test_unknown_property.expected.format)
+ (deps (:pp pp.exe) (:input test_unknown_property.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_unknown_property.actual)
+ (deps (:pp pp.exe) (:input test_unknown_property.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_unknown_property.actual) (:expected test_unknown_property.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_unknown_property)
+ (modules test_unknown_property)
+ (libraries zarith data-encoding)
+ (preprocess (pps qbc_ppx)))
