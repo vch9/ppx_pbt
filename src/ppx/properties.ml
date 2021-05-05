@@ -68,7 +68,10 @@ let check_gens property_name gens =
   | Some { n_gens = n; _ } ->
       let len = List.length gens in
       if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
-  | None -> raise (PropertyNotSupported property_name)
+  | None ->
+      Printf.printf
+        "Ppx_pbt (Warning): %s is your local property, can not check generators\n"
+        property_name
 
 (* Same as check_gens with args *)
 let check_args property_name args =
@@ -76,7 +79,10 @@ let check_args property_name args =
   | Some { n_args = n; _ } ->
       let len = List.length args in
       if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
-  | None -> raise (PropertyNotSupported property_name)
+  | None ->
+      Printf.printf
+        "Ppx_pbt (Warning): %s is your local property, can not check arguments\n"
+        property_name
 
 (* Applied arguments depends on the given generators
 
@@ -136,4 +142,4 @@ let call_property loc fun_name (name, args, gens) =
   in
   match builtin_properties name with
   | Some { expr = fun_expr; _ } -> Helpers.build_apply loc fun_expr args
-  | None -> raise (PropertyNotSupported name)
+  | None -> Helpers.build_apply loc (Helpers.build_ident loc name) args
