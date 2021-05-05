@@ -21,6 +21,27 @@
  (preprocess (pps qbc_ppx)))
 
 (rule
+ (targets test_cap.expected.format)
+ (deps (:pp pp.exe) (:input test_cap.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_cap.actual)
+ (deps (:pp pp.exe) (:input test_cap.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_cap.actual) (:expected test_cap.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_cap)
+ (modules test_cap)
+ (libraries zarith data-encoding)
+ (preprocess (pps qbc_ppx)))
+
+(rule
  (targets test_commutative.expected.format)
  (deps (:pp pp.exe) (:input test_commutative.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
