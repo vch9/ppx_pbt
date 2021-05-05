@@ -63,6 +63,27 @@
  (preprocess (pps qbc_ppx)))
 
 (rule
+ (targets test_eq.expected.format)
+ (deps (:pp pp.exe) (:input test_eq.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_eq.actual)
+ (deps (:pp pp.exe) (:input test_eq.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_eq.actual) (:expected test_eq.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_eq)
+ (modules test_eq)
+ (libraries zarith data-encoding)
+ (preprocess (pps qbc_ppx)))
+
+(rule
  (targets test_local_gen.expected.format)
  (deps (:pp pp.exe) (:input test_local_gen.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
