@@ -105,16 +105,16 @@ module Saturating_repr = struct
         if small_enough x && small_enough y then x * y
         else if Int.(y > saturated / x) then saturated
         else x * y
-    [@@pbt {| capped{saturated}[uint]; zeros{zero}[uint] |}]
+    [@@pbt {| capped{saturated}[uint]; absorbs{zero}[uint] |}]
 
-  let mul_fast x y = x * y [@@pbt {| zeros{zero}[uint] |}]
+  let mul_fast x y = x * y [@@pbt {| absorbs{zero}[uint] |}]
 
   let scale_fast x y =
     if x = 0 then 0
     else if small_enough y then x * y
     else if Int.(y > saturated / x) then saturated
     else x * y
-    [@@pbt {| zeros{zero}[uint]; capped{saturated}[uint] |}]
+    [@@pbt {| absorbs{zero}[uint]; capped{saturated}[uint] |}]
 
   let add x y =
     let z = x + y in

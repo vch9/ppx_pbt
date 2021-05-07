@@ -24,11 +24,11 @@ module Properties = struct
 
   let eq_res f oracle x y = f x y = oracle x y
 
-  let zero_left f zero x = f zero x = zero
+  let absorb_left f absorb x = f absorb x = absorb
 
-  let zero_right f zero x = f x zero = zero
+  let absorb_right f absorb x = f x absorb = absorb
 
-  let zeros f zero x = zero_left f zero x && zero_right f zero x
+  let absorbs f absorb x = absorb_left f absorb x && absorb_right f absorb x
 
   let floored_left f floor x = f floor x = floor
 

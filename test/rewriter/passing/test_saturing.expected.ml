@@ -105,39 +105,39 @@ module Saturating_repr = struct
         if small_enough x && small_enough y then x * y
         else if Int.(y > saturated / x) then saturated
         else x * y
-    [@@pbt {| capped{saturated}[uint]; zeros{zero}[uint] |}]
+    [@@pbt {| capped{saturated}[uint]; absorbs{zero}[uint] |}]
 
   let test_mul_is_capped =
     QCheck.Test.make ~name:"mul_is_capped" Pbt.Gens.uint (fun gen_0 ->
         Pbt.Properties.capped mul saturated gen_0)
 
-  let test_mul_is_zeros =
-    QCheck.Test.make ~name:"mul_is_zeros" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.zeros mul zero gen_0)
+  let test_mul_is_absorbs =
+    QCheck.Test.make ~name:"mul_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
+        Pbt.Properties.absorbs mul zero gen_0)
 
   let _ =
     QCheck_runner.run_tests
       ~verbose:true
-      [ test_mul_is_capped; test_mul_is_zeros ]
+      [ test_mul_is_capped; test_mul_is_absorbs ]
 
-  let mul_fast x y = x * y [@@pbt {| zeros{zero}[uint] |}]
+  let mul_fast x y = x * y [@@pbt {| absorbs{zero}[uint] |}]
 
-  let test_mul_fast_is_zeros =
-    QCheck.Test.make ~name:"mul_fast_is_zeros" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.zeros mul_fast zero gen_0)
+  let test_mul_fast_is_absorbs =
+    QCheck.Test.make ~name:"mul_fast_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
+        Pbt.Properties.absorbs mul_fast zero gen_0)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_mul_fast_is_zeros ]
+  let _ = QCheck_runner.run_tests ~verbose:true [ test_mul_fast_is_absorbs ]
 
   let scale_fast x y =
     if x = 0 then 0
     else if small_enough y then x * y
     else if Int.(y > saturated / x) then saturated
     else x * y
-    [@@pbt {| zeros{zero}[uint]; capped{saturated}[uint] |}]
+    [@@pbt {| absorbs{zero}[uint]; capped{saturated}[uint] |}]
 
-  let test_scale_fast_is_zeros =
-    QCheck.Test.make ~name:"scale_fast_is_zeros" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.zeros scale_fast zero gen_0)
+  let test_scale_fast_is_absorbs =
+    QCheck.Test.make ~name:"scale_fast_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
+        Pbt.Properties.absorbs scale_fast zero gen_0)
 
   let test_scale_fast_is_capped =
     QCheck.Test.make ~name:"scale_fast_is_capped" Pbt.Gens.uint (fun gen_0 ->
@@ -146,7 +146,7 @@ module Saturating_repr = struct
   let _ =
     QCheck_runner.run_tests
       ~verbose:true
-      [ test_scale_fast_is_zeros; test_scale_fast_is_capped ]
+      [ test_scale_fast_is_absorbs; test_scale_fast_is_capped ]
 
   let add x y =
     let z = x + y in

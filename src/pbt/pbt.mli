@@ -22,32 +22,32 @@ module Properties : sig
   (** [neutrals f elt x] test if elt is neutral on both side *)
   val neutrals : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [capped_left f cap x y] test if the function stays capped when
+  (** [capped_left f cap x] test if the function stays capped when
       the left argument is capped. *)
   val capped_left : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [capped_right f cap x y] test if the function stays capped when
+  (** [capped_right f cap x] test if the function stays capped when
       the right argument is capped. *)
   val capped_right : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [capped_right f cap x y] test if the function stays capped when
+  (** [capped_right f cap x] test if the function stays capped when
       the right or left argument is capped. *)
   val capped : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
   (** [eq_res f oracle x y] test if the result between f and the oracle are equals *)
   val eq_res : ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [zero_left f zero x y] test if the function stays zero when
-      the left argument is zero. *)
-  val zero_left : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+  (** [absorb_left f absorb x] test if the function returns x when
+      the left argument is absorb. *)
+  val absorb_left : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [zero_right f zero x y] test if the function stays zero when
-      the right argument is zero. *)
-  val zero_right : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+  (** [absorb_right f absorb x] test if the function returns x when
+      the right argument is absorb. *)
+  val absorb_right : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [zero_right f zero x y] test if the function stays zero when
-      the right or left argument is zero. *)
-  val zeros : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+  (** [absorb_right f absorb x] test if the function returns x when
+      the right or left argument is absorb. *)
+  val absorbs : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
   (** [floored_left f floor x y] test if the function stays floored when
       the left argument is floored. *)
