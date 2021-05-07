@@ -47,7 +47,7 @@ let build_gens loc (name, _args, gens) =
   let _ = Properties.check_gens name gens in
   let gens = Gens.replace_gens loc gens in
   let nested_gens = Gens.nest_generators gens in
-  ((Nolabel, Gens.nested_pairs_to_expr loc nested_gens), nested_gens)
+  (Gens.nested_pairs_to_expr loc nested_gens, nested_gens)
 
 (* Build_testing _ *)
 let build_testing_fun loc nested_gens fun_name (name, args, _) =
@@ -56,33 +56,35 @@ let build_testing_fun loc nested_gens fun_name (name, args, _) =
   let call_property =
     Properties.call_property loc fun_name (name, args, gens)
   in
-  let fun_expr = [%expr fun [%p fun_pattern] -> [%e call_property]] in
-  (Nolabel, fun_expr)
+  [%expr fun [%p fun_pattern] -> [%e call_property]]
 
-(* Build_testing_fun loc fun_name properties
+(* Build_test loc fun_name properties
 
-   Test.make ~name:<fun_name>_is_<name>
    <build_gens>
    <build_testing_fun> *)
-let build_test loc fun_name qcheck_name properties =
-  let make_exp = [%expr QCheck.Test.make] in
-  let name_exp = (Labelled "name", Helpers.build_string loc qcheck_name) in
+let build_test loc fun_name properties =
   let (gens_exp, nested_gens) = build_gens loc properties in
   let property_exp = build_testing_fun loc nested_gens fun_name properties in
-  Helpers.build_apply loc make_exp [ name_exp; gens_exp; property_exp ]
+  (gens_exp, property_exp)
 
 (* Build fun_name (name, args) :
 
-   let test_<fun_name>_is_<name> = <build_test> *)
+   let test_<fun_name>_is_<name> = QCheck.Test.make ~name:<name> <build_test> *)
 let build fun_name ((name, _args, _gens) as properties) =
   let loc = !Ast_helper.default_loc in
   let test_name = Format.sprintf "test_%s_is_%s" fun_name name in
-  let qcheck_name = Format.sprintf "%s_is_%s" fun_name name in
-  let vb_pat = Helpers.build_pattern_var loc test_name in
-  let test_exp = build_test loc fun_name qcheck_name properties in
-  let value_binding = Helpers.build_value_binding loc vb_pat test_exp in
-  let test = Pstr_value (Nonrecursive, [ value_binding ]) in
-  (test_name, { pstr_loc = loc; pstr_desc = test })
+  let test_name_var = Helpers.build_pattern_var loc test_name in
+  let qcheck_name =
+    Helpers.build_string loc @@ Format.sprintf "%s_is_%s" fun_name name
+  in
+  let (gens, test) = build_test loc fun_name properties in
+  let qcheck_test =
+    [%stri
+      let [%p test_name_var] =
+        QCheck.Test.make ~name:[%e qcheck_name] [%e gens] [%e test]]
+  in
+
+  (test_name, qcheck_test)
 
 let exec_tests tests_names =
   let loc = !Ast_helper.default_loc in
