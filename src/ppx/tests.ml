@@ -44,14 +44,14 @@ and get_tested_fun_longident_loc longident_loc =
    ...
  *)
 let build_gens loc (name, _args, gens) =
-  let _ = Properties.check_gens name gens in
+  let _ = Properties.check_gens loc name gens in
   let gens = Gens.replace_gens loc gens in
   let nested_gens = Gens.nest_generators gens in
   (Gens.nested_pairs_to_expr loc nested_gens, nested_gens)
 
 (* Build_testing _ *)
 let build_testing_fun loc nested_gens fun_name (name, args, _) =
-  let _ = Properties.check_args name args in
+  let _ = Properties.check_args loc name args in
   let (fun_pattern, gens) = Properties.pattern_from_gens loc nested_gens in
   let call_property =
     Properties.call_property loc fun_name (name, args, gens)
@@ -70,8 +70,7 @@ let build_test loc fun_name properties =
 (* Build fun_name (name, args) :
 
    let test_<fun_name>_is_<name> = QCheck.Test.make ~name:<name> <build_test> *)
-let build fun_name ((name, _args, _gens) as properties) =
-  let loc = !Ast_helper.default_loc in
+let build ~loc fun_name ((name, _, _) as properties) =
   let test_name = Format.sprintf "test_%s_is_%s" fun_name name in
   let test_name_var = Helpers.build_pattern_var loc test_name in
   let qcheck_name =
@@ -86,31 +85,30 @@ let build fun_name ((name, _args, _gens) as properties) =
 
   (test_name, qcheck_test)
 
-let exec_tests tests_names =
-  let loc = !Ast_helper.default_loc in
+let exec_tests loc tests_names =
   let tests =
     Properties.args_to_expr loc tests_names
     |> List.map snd |> Helpers.build_list loc
   in
   [%stri let _ = QCheck_runner.run_tests ~verbose:true [%e tests]]
 
-let replace_tests structure_item properties =
+let replace_tests ~loc stri properties =
   let tests_generated =
-    match structure_item.pstr_desc with
+    match stri.pstr_desc with
     | Pstr_value (_, values_bindings) ->
         let fun_name = get_tested_fun_values_binding values_bindings in
-        let tests = List.map (build fun_name) properties in
-        List.map snd tests @ [ exec_tests (List.map fst tests) ]
+        let tests = List.map (build ~loc fun_name) properties in
+        List.map snd tests @ [ exec_tests loc (List.map fst tests) ]
     (* TODO: better error management *)
     | _ -> assert false
   in
-  structure_item :: tests_generated
+  stri :: tests_generated
 
 let replace_pbt structure_item = function
   (* Structure item by construction can attach only one property *)
-  | [ pbt ] ->
+  | [ (pbt, loc) ] ->
       Payload.extract_pbt_from_payload pbt
       |> from_string
-      |> replace_tests structure_item
+      |> replace_tests ~loc structure_item
   (* TODO: better error management *)
   | _ -> assert false

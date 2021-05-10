@@ -41,7 +41,7 @@ and get_attributes_pbt attrs =
   List.filter_map
     (fun attribute ->
       if String.equal attribute.attr_name.txt attribute_name then
-        Some attribute.attr_payload
+        Some (attribute.attr_payload, attribute.attr_loc)
       else None)
     attrs
 

@@ -39,8 +39,7 @@ and args_to_str = function
    n_args <= Number of arguments required to call Pbt.Properties f *)
 type builtin_properties = { expr : expression; n_gens : int; n_args : int }
 
-let builtin_properties x =
-  let loc = !Ast_helper.default_loc in
+let builtin_properties loc x =
   [
     ( "commutative",
       { expr = [%expr Pbt.Properties.commutative]; n_gens = 2; n_args = 0 } );
@@ -72,8 +71,8 @@ let builtin_properties x =
 
    To each property_name is attached a number of required generators,
    see builtin_properties *)
-let check_gens property_name gens =
-  match builtin_properties property_name with
+let check_gens loc property_name gens =
+  match builtin_properties loc property_name with
   | Some { n_gens = n; _ } ->
       let len = List.length gens in
       if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
@@ -83,8 +82,8 @@ let check_gens property_name gens =
         property_name
 
 (* Same as check_gens with args *)
-let check_args property_name args =
-  match builtin_properties property_name with
+let check_args loc property_name args =
+  match builtin_properties loc property_name with
   | Some { n_args = n; _ } ->
       let len = List.length args in
       if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
@@ -149,6 +148,6 @@ let call_property loc fun_name (name, args, gens) =
   let args =
     fun_name :: args @ Gens.nested_pairs_to_list gens |> args_to_expr loc
   in
-  match builtin_properties name with
+  match builtin_properties loc name with
   | Some { expr = fun_expr; _ } -> Helpers.build_apply loc fun_expr args
   | None -> Helpers.build_apply loc (Helpers.build_ident loc name) args
