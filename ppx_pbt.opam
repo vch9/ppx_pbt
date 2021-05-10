@@ -1,6 +1,8 @@
-opam-version: "2.0.5"
+opam-version: "2.0"
 name: "ppx_pbt"
-version: "0.1"
+version: "0.1.0"
+license: "Licence MIT"
+synopsis: "PPX Rewriter for property based testing"
 
 homepage: "https://gitlab.com/vch9/ppx_pbt"
 bug-reports: "https://gitlab.com/vch9/ppx_pbt/-/issues"
