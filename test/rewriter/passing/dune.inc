@@ -18,7 +18,7 @@
  (name test_associative)
  (modules test_associative)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_cap.expected.format)
@@ -39,7 +39,7 @@
  (name test_cap)
  (modules test_cap)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_commutative.expected.format)
@@ -60,7 +60,7 @@
  (name test_commutative)
  (modules test_commutative)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_eq.expected.format)
@@ -81,7 +81,7 @@
  (name test_eq)
  (modules test_eq)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_local_gen.expected.format)
@@ -102,7 +102,7 @@
  (name test_local_gen)
  (modules test_local_gen)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_neutral.expected.format)
@@ -123,7 +123,7 @@
  (name test_neutral)
  (modules test_neutral)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_saturing.expected.format)
@@ -144,7 +144,7 @@
  (name test_saturing)
  (modules test_saturing)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 
 (rule
  (targets test_unknown_property.expected.format)
@@ -165,4 +165,4 @@
  (name test_unknown_property)
  (modules test_unknown_property)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))

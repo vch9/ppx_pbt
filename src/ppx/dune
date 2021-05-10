@@ -1,9 +1,9 @@
 (library
- (name qbc_ppx)
- (public_name qbc.qbc_ppx)
+ (name ppx_pbt)
+ (public_name ppx_pbt.ppx_pbt)
  (kind ppx_rewriter)
  (libraries ppxlib menhirLib qcheck)
- (ppx_runtime_libraries qbc.pbt)
+ (ppx_runtime_libraries ppx_pbt.pbt)
  (preprocess (pps ppxlib.metaquot)))
 
 (ocamllex lexer)

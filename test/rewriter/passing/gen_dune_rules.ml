@@ -21,7 +21,7 @@ let output_stanzas filename =
  (name %s)
  (modules %s)
  (libraries zarith data-encoding)
- (preprocess (pps qbc_ppx)))
+ (preprocess (pps ppx_pbt)))
 |}
     base
     base

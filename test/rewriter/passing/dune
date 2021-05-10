@@ -1,7 +1,7 @@
 (executable
  (name pp)
  (modules pp)
- (libraries ppxlib qbc_ppx))
+ (libraries ppxlib ppx_pbt))
 
 (include dune.inc)
 

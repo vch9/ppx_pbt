@@ -1,9 +1,9 @@
 opam-version: "2.0.5"
-name: "quick-but-correct"
+name: "ppx_pbt"
 version: "0.1"
 
-homepage: "https://gitlab.com/vch9/qbc"
-bug-reports: "https://gitlab.com/vch9/qbc/-/issues"
+homepage: "https://gitlab.com/vch9/ppx_pbt"
+bug-reports: "https://gitlab.com/vch9/ppx_pbt/-/issues"
 
 maintainer: [
   "Valentin Chaboche <valentin.chaboche@nomadic-labs.com>"
