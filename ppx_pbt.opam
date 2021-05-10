@@ -1,7 +1,7 @@
 opam-version: "2.0"
 name: "ppx_pbt"
 version: "0.1.0"
-license: "Licence MIT"
+license: "MIT"
 synopsis: "PPX Rewriter for property based testing"
 
 homepage: "https://gitlab.com/vch9/ppx_pbt"
@@ -12,14 +12,18 @@ maintainer: [
 ]
 
 authors: [
- "Valentin Chaboche <valentin.chaboche@nomadic-labs.com>" 
+ "Valentin Chaboche <valentin.chaboche@nomadic-labs.com>"
 ]
 
 depends: [
-  "dune" {build}
+  "dune" {>= "2.8.0"}
   "ocaml" {>= "4.10.0"}
   "menhir"
-  "qcheck" {>= "0.17.0"}
+  "qcheck" {>= "0.17"}
+  "metaquot" {>= "0.4"}
 ]
 
 build: ["dune" "build" "-p" name "-j" jobs]
+
+
+dev-repo: "git+https://gitlab.com/vch9/ppx_pbt.git"
