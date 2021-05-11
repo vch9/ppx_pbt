@@ -61,69 +61,60 @@ and get_tested_fun_longident_loc longident_loc =
   | Ldot (_, str) -> str
   | _ -> raise (CaseUnsupported "get_tested_fun_longident_loc")
 
-(* Build_gens loc properties
-
-   [gen1] -> gen1
-   [gen1; gen2] -> (pair gen1 gen2)
-   [gen1; gen2; gen3] -> (pair gen1 (pair gen2 gen3))
-   ...
- *)
-let build_gens loc (name, _args, gens) =
-  let _ = Properties.check_gens loc name gens in
-  let gens = Gens.replace_gens loc gens in
-  let nested_gens = Gens.nest_generators gens in
-  (Gens.nested_pairs_to_expr loc nested_gens, nested_gens)
-
-(* Build_testing _ *)
-let build_testing_fun loc nested_gens fun_name (name, args, _) =
-  let _ = Properties.check_args loc name args in
-  let (fun_pattern, gens) = Properties.pattern_from_gens loc nested_gens in
-  let call_property =
-    Properties.call_property loc fun_name (name, args, gens)
+(* Replace Properties.t into list of structure item *)
+let rec properties_to_test ~loc ~name properties =
+  let (tests, names) =
+    List.split @@ List.map (property_to_test ~loc ~name) properties
   in
-  [%expr fun [%p fun_pattern] -> [%e call_property]]
-
-(* Build_test loc fun_name properties
-
-   <build_gens>
-   <build_testing_fun> *)
-let build_test loc fun_name properties =
-  let (gens_exp, nested_gens) = build_gens loc properties in
-  let property_exp = build_testing_fun loc nested_gens fun_name properties in
-  (gens_exp, property_exp)
-
-(* Build fun_name (name, args) :
-
-   let test_<fun_name>_is_<name> = QCheck.Test.make ~name:<name> <build_test> *)
-let build ~loc fun_name ((name, _, _) as properties) =
-  let test_name = Format.sprintf "test_%s_is_%s" fun_name name in
-  let test_name_var = Helpers.build_pattern_var loc test_name in
-  let qcheck_name =
-    Helpers.build_string loc @@ Format.sprintf "%s_is_%s" fun_name name
+  let names =
+    Helpers.build_list loc (List.map (Helpers.build_ident loc) names)
   in
-  let (gens, test) = build_test loc fun_name properties in
-  let qcheck_test =
+  let runner =
+    [%stri let _ = QCheck_runner.run_tests ~verbose:true [%e names]]
+  in
+  tests @ [ runner ]
+
+and property_to_test ~loc ~name (property, args, gens) =
+  let (pat_name, expr_name, test_name) = name_to_test ~loc name property in
+  let (gens_expr, gens) = gens_to_test ~loc property gens in
+  let tested_fun = pbt_to_test ~loc name property gens args in
+
+  let test =
     [%stri
-      let [%p test_name_var] =
-        QCheck.Test.make ~name:[%e qcheck_name] [%e gens] [%e test]]
+      let [%p pat_name] =
+        QCheck.Test.make ~name:[%e expr_name] [%e gens_expr] [%e tested_fun]]
   in
+  (test, test_name)
 
-  (test_name, qcheck_test)
+and gens_to_test ~loc property gens =
+  let open Gens in
+  let _ = Properties.check_gens loc property gens in
+  let gens = replace_gens loc gens in
+  let gens = nest_generators gens in
+  let expr_gens = nested_pairs_to_expr loc gens in
+  (expr_gens, gens)
 
-let exec_tests loc tests_names =
-  let tests =
-    Properties.args_to_expr loc tests_names
-    |> List.map snd |> Helpers.build_list loc
-  in
-  [%stri let _ = QCheck_runner.run_tests ~verbose:true [%e tests]]
+and name_to_test ~loc name property =
+  let qcheck_name = Format.sprintf "%s_is_%s" name property in
+  let test_name = Format.sprintf "test_%s" qcheck_name in
+  let expr_name = Helpers.build_string loc qcheck_name in
+  let pat_name = Helpers.build_pattern_var loc test_name in
+
+  (pat_name, expr_name, test_name)
+
+and pbt_to_test ~loc name property gens args =
+  let open Properties in
+  let _ = check_args loc property args in
+  let (fun_pattern, gens) = Properties.pattern_from_gens loc gens in
+  let call = Properties.call_property loc name (property, args, gens) in
+  [%expr fun [%p fun_pattern] -> [%e call]]
 
 let replace_tests ~loc stri properties =
   let tests_generated =
     match stri.pstr_desc with
     | Pstr_value (_, values_bindings) ->
-        let fun_name = get_tested_fun_values_binding values_bindings in
-        let tests = List.map (build ~loc fun_name) properties in
-        List.map snd tests @ [ exec_tests loc (List.map fst tests) ]
+        let name = get_tested_fun_values_binding values_bindings in
+        properties_to_test ~loc ~name properties
     (* TODO: better error management *)
     | _ -> assert false
   in
