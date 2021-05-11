@@ -2,6 +2,7 @@ ppx_pbt
 =========
 Syntax extension for writing property based tests in OCaml code using properties
 and generators abstraction.
+Property based tests are written using [QCheck OCaml library](https://github.com/c-cube/qcheck)
 
 New syntactic constructs
 --------------------------
@@ -62,12 +63,12 @@ let add x y = x + y
 let add x y = x + y
 
 let test_add_is_commutative =
-  Test.make ~name:add_is_commutative
+  QCheck.Test.make ~name:"add_is_commutative"
   (QCheck.pair Pbt.Gens.int Pbt.Gens.int)
   (fun (x, y) -> Pbt.Properties.commutative add x y)
 
 let _ =
-  QCheck_run.run_tests ~verbose:true [ test_add_is_commutative ]
+  QCheck_runner.run_tests ~verbose:true [ test_add_is_commutative ]
 ```
 
 Use your own property
@@ -88,12 +89,12 @@ let even f x = (f x) mod 2 = 0
 let inc x = x + 2
 
 let test_inc_is_even =
-  QCheck.Test.make ~name:inc_is_even
+  QCheck.Test.make ~name:"inc_is_even"
   Pbt.Gens.int
   (fun x -> even inc x)
 
 let _ =
-  QCheck_run.run_tests ~verbose:true [ test_inc_is_even ]
+  QCheck_runner.run_tests ~verbose:true [ test_inc_is_even ]
 ```
 
 Properties comes either from:
@@ -141,7 +142,7 @@ let test_mul_is_positive =
   (fun (x, y) -> positive mul x y)
   
 let _ =
-  QCheck_run.run_tests ~verbose:true [ test_mul_is_positive ]
+  QCheck_runner.run_tests ~verbose:true [ test_mul_is_positive ]
 ```
 
 Use properties with arguments
@@ -159,12 +160,12 @@ let add x y = x + y
 (* which becomes *)
 
 let test_add_is_neutrals =
-  Test.make ~name:add_is_neutrals
+  QCheck.Test.make ~name:"add_is_neutrals"
   Pbt.Gens.int
   (fun (x, y) -> Pbt.Properties.neutrals add x)
 
 let _ =
-  QCheck_run.run_tests ~verbose:true [ test_add_is_neutrals ]
+  QCheck_runner.run_tests ~verbose:true [ test_add_is_neutrals ]
 ```
 
 Property's arguments are the first parameters given to the property:
