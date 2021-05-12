@@ -72,10 +72,7 @@ let replace_stri stri =
   let gen =
     match stri.pstr_desc with
     (* TODO multiple types declaration ? *)
-    | Pstr_type (_, [ x ]) ->
-        (* TODO remove this print *)
-        print_type_decl x ;
-        Some (create_gen_from_td x)
+    | Pstr_type (_, [ x ]) -> Some (create_gen_from_td x)
     (* TODO structure item inside structure item *)
     | _ -> None
   in

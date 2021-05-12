@@ -71,26 +71,36 @@ and type_params_to_str params = list_to_str type_param_to_str params
 
 and core_type_to_str ct =
   match ct.ptyp_desc with
-  (* TODO improve this printer *)
-  | Ptyp_any -> "todo any"
-  | Ptyp_var _string -> "todo var"
-  | Ptyp_arrow (_arg_label, _ct1, _ct2) -> "todo arrow"
-  | Ptyp_tuple _core_types -> "todo tuple"
   | Ptyp_constr (id, cts) ->
       Printf.sprintf
         "K (%s, %s)"
         (longident_to_str id.txt)
         (core_types_to_str cts)
-  | _ -> "todo else core_type"
+  | _ -> "TODO else core_type"
 
 and core_types_to_str cts = list_to_str core_type_to_str cts
 
 and type_kind_to_str = function
   | Ptype_abstract -> "abstract"
   (* TODO useful to print here *)
-  | Ptype_variant _constrs -> "constructor_declaration list"
+  | Ptype_variant constrs -> constrs_declaration_to_str constrs
   | Ptype_record _labels -> "label_declaration list"
   | Ptype_open -> "open"
+
+and constrs_declaration_to_str cstrs =
+  list_to_str ~sep:"\n" constr_declaration_to_str cstrs
+
+and constr_declaration_to_str cd =
+  Printf.sprintf
+    "{ pcd_name:%s; pcd_args:%s; pcd_res:%s; _ }"
+    cd.pcd_name.txt
+    (constr_args_to_str cd.pcd_args)
+    (Option.fold ~none:"None" ~some:core_type_to_str cd.pcd_res)
+
+and constr_args_to_str = function
+  (* TODO really print if necessary *)
+  | Pcstr_tuple cts -> core_types_to_str cts
+  | Pcstr_record _ -> "Pcstr_record"
 
 and attribute_to_str attr =
   Printf.sprintf "{attr_name : %s; _; _}" attr.attr_name.txt
