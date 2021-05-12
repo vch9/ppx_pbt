@@ -28,11 +28,11 @@ open Ppxlib
 (* ------------ Print type_declaration ------------ *)
 (* ------------------------------------------------ *)
 
-let list_to_str f l =
+let list_to_str ?(sep = " ; ") f l =
   let rec aux = function
     | [] -> ""
     | [ x ] -> f x
-    | x :: xs -> f x ^ " ; " ^ aux xs
+    | x :: xs -> f x ^ sep ^ aux xs
   in
   Printf.sprintf "[ %s ]" (aux l)
 
