@@ -33,10 +33,9 @@ let rec create_gen_from_td td =
     Helpers.build_pattern_var loc @@ Printf.sprintf "gen_%s" td.ptype_name.txt
   in
   let body =
-    Option.fold (* TODO what happens when the manifest is None ? *)
-      ~none:[%expr "TODO"]
-      ~some:create_gen_from_core_type
-      td.ptype_manifest
+    match td.ptype_manifest with
+    | None -> create_gen_from_kind td.ptype_kind
+    | Some ct -> create_gen_from_core_type ct
   in
   [%stri let [%p name] = [%e body]]
 
@@ -47,6 +46,42 @@ and create_gen_from_core_type ct =
       create_gen_from_longident lg.txt
   | Ptyp_tuple elems -> create_gen_from_tuple elems
   | _ -> raise (CaseUnsupported "create_gen_from_core_type")
+
+and create_gen_from_kind = function
+  | Ptype_variant cstrs_decl ->
+      (* TODO loc here *)
+      let loc = !Ast_helper.default_loc in
+      let gens =
+        List.map create_gen_from_constructor_decl cstrs_decl
+        |> Helpers.build_list loc
+      in
+      [%expr QCheck.oneof [%e gens]]
+  | _ -> raise (CaseUnsupported "create_gen_from_kind")
+
+and create_gen_from_constructor_decl cd =
+  (* TODO loc here *)
+  let loc = !Ast_helper.default_loc in
+
+  let gens = create_gen_from_cstr_args cd.pcd_args |> Gens.nest_generators in
+  let (pat, gens_name) = Properties.pattern_from_gens loc gens in
+  let gens = Gens.nested_pairs_to_expr loc gens in
+
+  let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
+
+  let k_args =
+    Gens.nested_pairs_to_list gens_name |> List.map (Helpers.build_ident loc)
+    |> function
+    | [ x ] -> x
+    | l -> Helpers.build_tuple loc l
+  in
+
+  let build = Helpers.build_construct loc k_name k_args in
+
+  [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
+
+and create_gen_from_cstr_args = function
+  | Pcstr_tuple cts -> List.map create_gen_from_core_type cts
+  | _ -> raise (CaseUnsupported "create_gen_from_cstr_arg")
 
 and create_gen_from_longident = function
   | Lident s -> (
@@ -63,6 +98,8 @@ and create_gen_from_tuple elems =
   let gens = List.map create_gen_from_core_type elems in
 
   match gens with
+  (* TODO use nested gens in a QCheck.map *)
+  | [ g1 ] -> g1
   | [ g1; g2 ] -> [%expr QCheck.pair [%e g1] [%e g2]]
   | [ g1; g2; g3 ] -> [%expr QCheck.triple [%e g1] [%e g2] [%e g3]]
   | [ g1; g2; g3; g4 ] -> [%expr QCheck.quad [%e g1] [%e g2] [%e g3] [%e g4]]
