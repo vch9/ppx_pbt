@@ -42,7 +42,10 @@ let rec create_gen_from_td td =
 
 and create_gen_from_core_type ct =
   match ct.ptyp_desc with
-  | Ptyp_constr (lg, _c_types) -> create_gen_from_longident lg.txt
+  | Ptyp_constr (lg, _c_types) ->
+      (* TODO what is c_types ? *)
+      create_gen_from_longident lg.txt
+  | Ptyp_tuple elems -> create_gen_from_tuple elems
   | _ -> raise (CaseUnsupported "create_gen_from_core_type")
 
 and create_gen_from_longident = function
@@ -55,11 +58,24 @@ and create_gen_from_longident = function
       | None -> Helpers.build_ident loc @@ "gen_" ^ s)
   | _ -> raise (CaseUnsupported "create_gen_from_longident")
 
+and create_gen_from_tuple elems =
+  let loc = !Ast_helper.default_loc in
+  let gens = List.map create_gen_from_core_type elems in
+
+  match gens with
+  | [ g1; g2 ] -> [%expr QCheck.pair [%e g1] [%e g2]]
+  | [ g1; g2; g3 ] -> [%expr QCheck.triple [%e g1] [%e g2] [%e g3]]
+  | [ g1; g2; g3; g4 ] -> [%expr QCheck.quad [%e g1] [%e g2] [%e g3] [%e g4]]
+  | _ -> raise (CaseUnsupported "Tuple contains more than 4 elements")
+
 let replace_stri stri =
   let gen =
     match stri.pstr_desc with
     (* TODO multiple types declaration ? *)
-    | Pstr_type (_, [ x ]) -> Some (create_gen_from_td x)
+    | Pstr_type (_, [ x ]) ->
+        (* TODO remove this print *)
+        print_type_decl x ;
+        Some (create_gen_from_td x)
     (* TODO structure item inside structure item *)
     | _ -> None
   in
