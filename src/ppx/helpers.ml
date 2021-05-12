@@ -55,3 +55,10 @@ let build_apply loc to_apply args =
 
 let build_ident loc x =
   build_expression loc @@ Pexp_ident { txt = Lident x; loc }
+
+let build_longident loc x = { txt = x; loc }
+
+let build_tuple loc xs = build_expression loc @@ Pexp_tuple xs
+
+let build_construct loc kname kargs =
+  build_expression loc @@ Pexp_construct (kname, Some kargs)
