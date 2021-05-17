@@ -25,6 +25,34 @@
 open Ppxlib
 open Error
 
+(* Helper function to build tuple
+
+   returns (expression * name list * pattern)
+
+   example:
+   build_nested_gens __loc__ [int, int, string] =>
+
+     QCheck.Pair
+        Pbt.Gens.int
+        (QCheck.Pair
+            Pbt.Gens.int
+            Pbt.Gens.int),
+     [gen_0, gen_1, gen_2],
+     (gen_0, (gen_1, gen_2))
+*)
+
+let build_nested_gens loc gens =
+  let gens = Gens.nest_generators gens in
+  let (pat, gens_name) = Properties.pattern_from_gens loc gens in
+  let gens = Gens.nested_pairs_to_expr loc gens in
+  let gens_name = Gens.nested_pairs_to_list gens_name in
+
+  (gens, gens_name, pat)
+
+(* ------------------------------------------------ *)
+(* ------- Create gen from type declaration ------- *)
+(* ------------------------------------------------ *)
+
 let rec create_gen_from_td td =
   (* TODO use attribute location *)
   let loc = !Ast_helper.default_loc in
@@ -62,17 +90,14 @@ and create_gen_from_constructor_decl cd =
   (* TODO loc here *)
   let loc = !Ast_helper.default_loc in
 
-  let gens = create_gen_from_cstr_args cd.pcd_args |> Gens.nest_generators in
-  let (pat, gens_name) = Properties.pattern_from_gens loc gens in
-  let gens = Gens.nested_pairs_to_expr loc gens in
+  let (gens, gens_name, pat) =
+    build_nested_gens loc @@ create_gen_from_cstr_args cd.pcd_args
+  in
 
   let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
 
   let k_args =
-    Gens.nested_pairs_to_list gens_name |> List.map (Helpers.build_ident loc)
-    |> function
-    | [ x ] -> x
-    | l -> Helpers.build_tuple loc l
+    List.map (Helpers.build_ident loc) gens_name |> Helpers.build_tuple loc
   in
 
   let build = Helpers.build_construct loc k_name k_args in
@@ -98,12 +123,16 @@ and create_gen_from_tuple elems =
   let gens = List.map create_gen_from_core_type elems in
 
   match gens with
-  (* TODO use nested gens in a QCheck.map *)
   | [ g1 ] -> g1
   | [ g1; g2 ] -> [%expr QCheck.pair [%e g1] [%e g2]]
   | [ g1; g2; g3 ] -> [%expr QCheck.triple [%e g1] [%e g2] [%e g3]]
   | [ g1; g2; g3; g4 ] -> [%expr QCheck.quad [%e g1] [%e g2] [%e g3] [%e g4]]
-  | _ -> raise (CaseUnsupported "Tuple contains more than 4 elements")
+  | gens ->
+      let (gens, gens_name, pat) = build_nested_gens loc gens in
+      let build =
+        List.map (Helpers.build_ident loc) gens_name |> Helpers.build_tuple loc
+      in
+      [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
 let replace_stri stri =
   let gen =
