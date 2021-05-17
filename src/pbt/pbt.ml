@@ -27,6 +27,16 @@ module Gens = struct
   let int = QCheck.int
 
   let uint = QCheck.(map (fun x -> abs x) int)
+
+  let float = QCheck.float
+
+  let char = QCheck.char
+
+  let string = QCheck.string
+
+  let bool = QCheck.bool
+
+  let unit = QCheck.unit
 end
 
 module Properties = struct

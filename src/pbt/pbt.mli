@@ -29,6 +29,21 @@ module Gens : sig
 
   (** Unsigned int generator *)
   val uint : int QCheck.arbitrary
+
+  (** Float generator *)
+  val float : float QCheck.arbitrary
+
+  (** Char generator *)
+  val char : char QCheck.arbitrary
+
+  (** String generator *)
+  val string : string QCheck.arbitrary
+
+  (** Bool generator *)
+  val bool : bool QCheck.arbitrary
+
+  (** Unit generator *)
+  val unit : unit QCheck.arbitrary
 end
 
 module Properties : sig

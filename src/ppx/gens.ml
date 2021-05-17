@@ -28,7 +28,15 @@ open Ppxlib
 (* Exhaustive list of builtin generators
    If the function returns None -> the generator must be provided by the user *)
 let builtin_generators loc x =
-  [ ("int", [%expr Pbt.Gens.int]); ("uint", [%expr Pbt.Gens.uint]) ]
+  [
+    ("int", [%expr Pbt.Gens.int]);
+    ("uint", [%expr Pbt.Gens.uint]);
+    ("float", [%expr Pbt.Gens.float]);
+    ("char", [%expr Pbt.Gens.char]);
+    ("string", [%expr Pbt.Gens.string]);
+    ("bool", [%expr Pbt.Gens.bool]);
+    ("unit", [%expr Pbt.Gens.unit]);
+  ]
   |> List.assoc_opt x
 
 (* Either replace gen_ids by builtin generators or with identifiers to
