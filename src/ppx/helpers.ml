@@ -58,7 +58,9 @@ let build_ident loc x =
 
 let build_longident loc x = { txt = x; loc }
 
-let build_tuple loc xs = build_expression loc @@ Pexp_tuple xs
+let build_tuple loc = function
+  | [ x ] -> x
+  | xs -> build_expression loc @@ Pexp_tuple xs
 
 let build_construct loc kname kargs =
   build_expression loc @@ Pexp_construct (kname, Some kargs)
