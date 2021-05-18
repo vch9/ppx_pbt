@@ -49,6 +49,22 @@ let build_nested_gens loc gens =
 
   (gens, gens_name, pat)
 
+(* Helper function to check if the type is recursive *)
+let rec is_recursive type_name = function
+  | Ptype_variant cstrs ->
+      List.exists (is_recursive_constructor_decl type_name) cstrs
+  | _ -> raise (CaseUnsupported "is_recursive")
+
+and is_recursive_constructor_decl type_name cd =
+  match cd.pcd_args with
+  | Pcstr_tuple cts -> List.exists (is_recursive_core_type type_name) cts
+  | Pcstr_record _ -> raise (CaseUnsupported "is_recursive_contructor_decl")
+
+and is_recursive_core_type type_name ct =
+  match ct.ptyp_desc with
+  | Ptyp_constr ({ txt = lg; _ }, _) -> Pp.longident_to_str lg = type_name
+  | _ -> false
+
 (* ------------------------------------------------ *)
 (* ------- Create gen from type declaration ------- *)
 (* ------------------------------------------------ *)
@@ -56,13 +72,14 @@ let build_nested_gens loc gens =
 let rec create_gen_from_td td =
   (* TODO use attribute location *)
   let loc = !Ast_helper.default_loc in
+  let type_name = td.ptype_name.txt in
   let name =
     (* TODO export gen_%s in a function *)
-    Helpers.build_pattern_var loc @@ Printf.sprintf "gen_%s" td.ptype_name.txt
+    Helpers.build_pattern_var loc @@ Printf.sprintf "gen_%s" type_name
   in
   let body =
     match td.ptype_manifest with
-    | None -> create_gen_from_kind td.ptype_kind
+    | None -> create_gen_from_kind type_name td.ptype_kind
     | Some ct -> create_gen_from_core_type ct
   in
   [%stri let [%p name] = [%e body]]
@@ -75,16 +92,23 @@ and create_gen_from_core_type ct =
   | Ptyp_tuple elems -> create_gen_from_tuple elems
   | _ -> raise (CaseUnsupported "create_gen_from_core_type")
 
-and create_gen_from_kind = function
+and create_gen_from_kind type_name kind =
+  match kind with
   | Ptype_variant cstrs_decl ->
-      (* TODO loc here *)
-      let loc = !Ast_helper.default_loc in
-      let gens =
-        List.map create_gen_from_constructor_decl cstrs_decl
-        |> Helpers.build_list loc
-      in
-      [%expr QCheck.oneof [%e gens]]
+      if is_recursive type_name kind then create_from_kind_rec kind
+      else
+        (* TODO loc here *)
+        let loc = !Ast_helper.default_loc in
+        let gens =
+          List.map create_gen_from_constructor_decl cstrs_decl
+          |> Helpers.build_list loc
+        in
+        [%expr QCheck.oneof [%e gens]]
   | _ -> raise (CaseUnsupported "create_gen_from_kind")
+
+and create_from_kind_rec _kind =
+  (* TODO *)
+  raise (CaseUnsupported "create_from_kind_rec")
 
 and create_gen_from_constructor_decl cd =
   (* TODO loc here *)
