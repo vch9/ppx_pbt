@@ -107,11 +107,13 @@ and replace_module_expr module_expr =
       }
   | _ -> module_expr
 
-let expand struct_item =
+let expand stri =
   try
-    if (not !ignore) && structure_item_contains_pbt struct_item then
-      replace_structure_item struct_item
-    else [ struct_item ]
+    if (not !ignore) && structure_item_contains_pbt stri then
+      replace_structure_item stri
+    else if (not !ignore) && Gen.stri_contains_gen stri then
+      Gen.replace_stri stri
+    else [ stri ]
   with e ->
     Error.print_exception e ;
     raise InternalError
