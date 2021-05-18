@@ -25,6 +25,8 @@
 open Ppxlib
 open Error
 
+let attr_gen = "gen"
+
 (* Helper function to build tuple
 
    returns (expression * name list * pattern)
@@ -69,9 +71,7 @@ and is_recursive_core_type type_name ct =
 (* ------- Create gen from type declaration ------- *)
 (* ------------------------------------------------ *)
 
-let rec create_gen_from_td td =
-  (* TODO use attribute location *)
-  let loc = !Ast_helper.default_loc in
+let rec create_gen_from_td ~loc td =
   let type_name = td.ptype_name.txt in
   let name =
     (* TODO export gen_%s in a function *)
@@ -79,28 +79,24 @@ let rec create_gen_from_td td =
   in
   let body =
     match td.ptype_manifest with
-    | None -> create_gen_from_kind type_name td.ptype_kind
-    | Some ct -> create_gen_from_core_type ct
+    | None -> create_gen_from_kind ~loc type_name td.ptype_kind
+    | Some ct -> create_gen_from_core_type ~loc ct
   in
   [%stri let [%p name] = [%e body]]
 
-and create_gen_from_core_type ct =
+and create_gen_from_core_type ~loc ct =
   match ct.ptyp_desc with
-  | Ptyp_constr (lg, _c_types) ->
-      (* TODO what is c_types ? *)
-      create_gen_from_longident lg.txt
-  | Ptyp_tuple elems -> create_gen_from_tuple elems
+  | Ptyp_constr (lg, _c_types) -> create_gen_from_longident ~loc lg.txt
+  | Ptyp_tuple elems -> create_gen_from_tuple ~loc elems
   | _ -> raise (CaseUnsupported "create_gen_from_core_type")
 
-and create_gen_from_kind type_name kind =
+and create_gen_from_kind ~loc type_name kind =
   match kind with
   | Ptype_variant cstrs_decl ->
       if is_recursive type_name kind then create_from_kind_rec kind
       else
-        (* TODO loc here *)
-        let loc = !Ast_helper.default_loc in
         let gens =
-          List.map create_gen_from_constructor_decl cstrs_decl
+          List.map (create_gen_from_constructor_decl ~loc) cstrs_decl
           |> Helpers.build_list loc
         in
         [%expr QCheck.oneof [%e gens]]
@@ -110,12 +106,9 @@ and create_from_kind_rec _kind =
   (* TODO *)
   raise (CaseUnsupported "create_from_kind_rec")
 
-and create_gen_from_constructor_decl cd =
-  (* TODO loc here *)
-  let loc = !Ast_helper.default_loc in
-
+and create_gen_from_constructor_decl ~loc cd =
   let (gens, gens_name, pat) =
-    build_nested_gens loc @@ create_gen_from_cstr_args cd.pcd_args
+    build_nested_gens loc @@ create_gen_from_cstr_args ~loc cd.pcd_args
   in
 
   let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
@@ -128,23 +121,20 @@ and create_gen_from_constructor_decl cd =
 
   [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
-and create_gen_from_cstr_args = function
-  | Pcstr_tuple cts -> List.map create_gen_from_core_type cts
+and create_gen_from_cstr_args ~loc = function
+  | Pcstr_tuple cts -> List.map (create_gen_from_core_type ~loc) cts
   | _ -> raise (CaseUnsupported "create_gen_from_cstr_arg")
 
-and create_gen_from_longident = function
+and create_gen_from_longident ~loc = function
   | Lident s -> (
-      (* TODO use attribute location *)
-      let loc = !Ast_helper.default_loc in
       match Gens.builtin_generators loc s with
       | Some e -> e
       (* TODO export gen_%s in a function *)
       | None -> Helpers.build_ident loc @@ "gen_" ^ s)
   | _ -> raise (CaseUnsupported "create_gen_from_longident")
 
-and create_gen_from_tuple elems =
-  let loc = !Ast_helper.default_loc in
-  let gens = List.map create_gen_from_core_type elems in
+and create_gen_from_tuple ~loc elems =
+  let gens = List.map (create_gen_from_core_type ~loc) elems in
 
   match gens with
   | [ g1 ] -> g1
@@ -158,24 +148,31 @@ and create_gen_from_tuple elems =
       in
       [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
+let rec get_stri_gen stri =
+  match stri.pstr_desc with
+  | Pstr_type (_, [ x ]) ->
+      type_decl_contains_gen x (* TODO structure item inside structure item *)
+  | _ -> None
+
+and type_decl_contains_gen td =
+  (* We suppose we need only one attribute *)
+  List.find_opt attribute_contains_gen td.ptype_attributes
+
+and attribute_contains_gen attr = attr.attr_name.txt = attr_gen
+
+let stri_contains_gen stri = Option.is_some @@ get_stri_gen stri
+
 let replace_stri stri =
   let gen =
     match stri.pstr_desc with
     (* TODO multiple types declaration ? *)
-    | Pstr_type (_, [ x ]) -> Some (create_gen_from_td x)
+    | Pstr_type (_, [ x ]) ->
+        let attr = get_stri_gen stri in
+        (* Replace only stri attached with attributes *)
+        assert (Option.is_some attr) ;
+        let loc = (Option.get attr).attr_loc in
+        Some (create_gen_from_td ~loc x)
     (* TODO structure item inside structure item *)
     | _ -> None
   in
   Option.fold ~none:[ stri ] ~some:(fun x -> [ stri; x ]) gen
-
-let rec stri_contains_gen stri =
-  match stri.pstr_desc with
-  | Pstr_type (_, [ x ]) -> type_decl_contains_gen x
-  | _ -> false
-
-and type_decl_contains_gen td =
-  List.exists attribute_contains_gen td.ptype_attributes
-
-and attribute_contains_gen attr =
-  (* TODO do not hardcore gen here *)
-  attr.attr_name.txt = "gen"
