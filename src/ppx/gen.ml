@@ -71,12 +71,11 @@ and is_recursive_core_type type_name ct =
 (* ------- Create gen from type declaration ------- *)
 (* ------------------------------------------------ *)
 
+let gen_name s = "gen_" ^ s
+
 let rec create_gen_from_td ~loc td =
   let type_name = td.ptype_name.txt in
-  let name =
-    (* TODO export gen_%s in a function *)
-    Helpers.build_pattern_var loc @@ Printf.sprintf "gen_%s" type_name
-  in
+  let name = Helpers.build_pattern_var loc @@ gen_name type_name in
   let body =
     match td.ptype_manifest with
     | None -> create_gen_from_kind ~loc type_name td.ptype_kind
@@ -129,8 +128,7 @@ and create_gen_from_longident ~loc = function
   | Lident s -> (
       match Gens.builtin_generators loc s with
       | Some e -> e
-      (* TODO export gen_%s in a function *)
-      | None -> Helpers.build_ident loc @@ "gen_" ^ s)
+      | None -> Helpers.build_ident loc @@ gen_name s)
   | _ -> raise (CaseUnsupported "create_gen_from_longident")
 
 and create_gen_from_tuple ~loc elems =
