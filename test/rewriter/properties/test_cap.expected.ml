@@ -114,16 +114,18 @@ module Saturating_repr = struct
     else if Int.(y > saturated / x) then saturated
     else x * y
 
-  let add x y =
-    let z = x + y in
-    if z >= 0 then z else saturated
-    [@@pbt {| capped{saturated}[uint] |}]
+  include struct
+    let add x y =
+      let z = x + y in
+      if z >= 0 then z else saturated
+      [@@pbt {| capped{saturated}[uint] |}]
 
-  let test_add_is_capped =
-    QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.capped add saturated gen_0)
+    let test_add_is_capped =
+      QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.capped add saturated gen_0)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_capped ]
+    let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_capped ]
+  end
 
   let sub x y = Int.max (x - y) 0
 

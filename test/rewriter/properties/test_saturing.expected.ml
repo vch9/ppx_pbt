@@ -97,82 +97,92 @@ module Saturating_repr = struct
      which is positive and is less than [x]. *)
   let shift_right x y = (x :> int) lsr y
 
-  let mul x y =
-    (* assert (x >= 0 && y >= 0); *)
-    match x with
-    | 0 -> 0
-    | x ->
-        if small_enough x && small_enough y then x * y
-        else if Int.(y > saturated / x) then saturated
-        else x * y
-    [@@pbt {| capped{saturated}[uint]; absorbs{zero}[uint] |}]
+  include struct
+    let mul x y =
+      (* assert (x >= 0 && y >= 0); *)
+      match x with
+      | 0 -> 0
+      | x ->
+          if small_enough x && small_enough y then x * y
+          else if Int.(y > saturated / x) then saturated
+          else x * y
+      [@@pbt {| capped{saturated}[uint]; absorbs{zero}[uint] |}]
 
-  let test_mul_is_capped =
-    QCheck.Test.make ~name:"mul_is_capped" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.capped mul saturated gen_0)
+    let test_mul_is_capped =
+      QCheck.Test.make ~name:"mul_is_capped" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.capped mul saturated gen_0)
 
-  let test_mul_is_absorbs =
-    QCheck.Test.make ~name:"mul_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.absorbs mul zero gen_0)
+    let test_mul_is_absorbs =
+      QCheck.Test.make ~name:"mul_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.absorbs mul zero gen_0)
 
-  let _ =
-    QCheck_runner.run_tests
-      ~verbose:true
-      [ test_mul_is_capped; test_mul_is_absorbs ]
+    let _ =
+      QCheck_runner.run_tests
+        ~verbose:true
+        [ test_mul_is_capped; test_mul_is_absorbs ]
+  end
 
-  let mul_fast x y = x * y [@@pbt {| absorbs{zero}[uint] |}]
+  include struct
+    let mul_fast x y = x * y [@@pbt {| absorbs{zero}[uint] |}]
 
-  let test_mul_fast_is_absorbs =
-    QCheck.Test.make ~name:"mul_fast_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.absorbs mul_fast zero gen_0)
+    let test_mul_fast_is_absorbs =
+      QCheck.Test.make ~name:"mul_fast_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.absorbs mul_fast zero gen_0)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_mul_fast_is_absorbs ]
+    let _ = QCheck_runner.run_tests ~verbose:true [ test_mul_fast_is_absorbs ]
+  end
 
-  let scale_fast x y =
-    if x = 0 then 0
-    else if small_enough y then x * y
-    else if Int.(y > saturated / x) then saturated
-    else x * y
-    [@@pbt {| absorbs{zero}[uint]; capped{saturated}[uint] |}]
+  include struct
+    let scale_fast x y =
+      if x = 0 then 0
+      else if small_enough y then x * y
+      else if Int.(y > saturated / x) then saturated
+      else x * y
+      [@@pbt {| absorbs{zero}[uint]; capped{saturated}[uint] |}]
 
-  let test_scale_fast_is_absorbs =
-    QCheck.Test.make ~name:"scale_fast_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.absorbs scale_fast zero gen_0)
+    let test_scale_fast_is_absorbs =
+      QCheck.Test.make ~name:"scale_fast_is_absorbs" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.absorbs scale_fast zero gen_0)
 
-  let test_scale_fast_is_capped =
-    QCheck.Test.make ~name:"scale_fast_is_capped" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.capped scale_fast saturated gen_0)
+    let test_scale_fast_is_capped =
+      QCheck.Test.make ~name:"scale_fast_is_capped" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.capped scale_fast saturated gen_0)
 
-  let _ =
-    QCheck_runner.run_tests
-      ~verbose:true
-      [ test_scale_fast_is_absorbs; test_scale_fast_is_capped ]
+    let _ =
+      QCheck_runner.run_tests
+        ~verbose:true
+        [ test_scale_fast_is_absorbs; test_scale_fast_is_capped ]
+  end
 
-  let add x y =
-    let z = x + y in
-    if z >= 0 then z else saturated
-    [@@pbt {| neutrals{zero}[uint]; capped{saturated}[uint] |}]
+  include struct
+    let add x y =
+      let z = x + y in
+      if z >= 0 then z else saturated
+      [@@pbt {| neutrals{zero}[uint]; capped{saturated}[uint] |}]
 
-  let test_add_is_neutrals =
-    QCheck.Test.make ~name:"add_is_neutrals" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.neutrals add zero gen_0)
+    let test_add_is_neutrals =
+      QCheck.Test.make ~name:"add_is_neutrals" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.neutrals add zero gen_0)
 
-  let test_add_is_capped =
-    QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.capped add saturated gen_0)
+    let test_add_is_capped =
+      QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.capped add saturated gen_0)
 
-  let _ =
-    QCheck_runner.run_tests
-      ~verbose:true
-      [ test_add_is_neutrals; test_add_is_capped ]
+    let _ =
+      QCheck_runner.run_tests
+        ~verbose:true
+        [ test_add_is_neutrals; test_add_is_capped ]
+  end
 
-  let sub x y = Int.max (x - y) 0 [@@pbt {| floored_left{zero}[uint] |}]
+  include struct
+    let sub x y = Int.max (x - y) 0 [@@pbt {| floored_left{zero}[uint] |}]
 
-  let test_sub_is_floored_left =
-    QCheck.Test.make ~name:"sub_is_floored_left" Pbt.Gens.uint (fun gen_0 ->
-        Pbt.Properties.floored_left sub zero gen_0)
+    let test_sub_is_floored_left =
+      QCheck.Test.make ~name:"sub_is_floored_left" Pbt.Gens.uint (fun gen_0 ->
+          Pbt.Properties.floored_left sub zero gen_0)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_sub_is_floored_left ]
+    let _ = QCheck_runner.run_tests ~verbose:true [ test_sub_is_floored_left ]
+  end
 
   let sub_opt x y =
     let s = x - y in

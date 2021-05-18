@@ -28,96 +28,58 @@ open Error
 
 (*------ Find attributes in Ast.structure_item ------*)
 
-let attribute_name = "pbt"
+let pbt_name = "pbt"
 
-(* Meant for testing, if ignore is true -> attributes are ignored *)
+let gen_name = "gen"
+
 let ignore = ref false
 
-(* get_stri_pbt recursively find attributes in structured items *)
-let rec get_stri_pbt stri =
+let filter_attributes expected xs =
+  let open Helpers in
+  List.filter (fun attr -> attr.attr_name.txt = expected) xs
+  |> List.map (fun attr ->
+         create_info ~payload:attr.attr_payload ~loc:attr.attr_loc ())
+
+let get_attributes stri =
   match stri.pstr_desc with
-  | Pstr_eval (_, attributes) -> get_attributes_pbt attributes
-  | Pstr_value (_, values_binding) -> get_values_binding_pbt values_binding
-  | Pstr_module module_binding ->
-      let pmb_expr = module_binding.pmb_expr in
-      get_module_expr_pbt pmb_expr
-  (* Default case: attributes are not yet to be found in others structured items *)
+  | Pstr_eval (_, attributes) -> attributes
+  | Pstr_value (_, vbs) ->
+      List.map (fun vb -> vb.pvb_attributes) vbs |> List.concat
   | _ -> []
 
-and get_structure_pbt structures =
-  List.fold_left
-    (fun acc structure -> get_stri_pbt structure @ acc)
-    []
-    structures
+let extract_name_from_pat pat =
+  match pat.ppat_desc with
+  | Ppat_var { txt = name; _ } -> name
+  | _ -> raise (CaseUnsupported "Function name can not be extracted")
 
-and get_module_expr_pbt module_expr =
-  match module_expr.pmod_desc with
-  | Pmod_structure structure -> get_structure_pbt structure
-  | _ -> []
+class mapper =
+  object (_self)
+    inherit Ast_traverse.map as super
 
-and get_values_binding_pbt vs_binds =
-  List.fold_left
-    (fun acc value_binding ->
-      get_attributes_pbt value_binding.pvb_attributes @ acc)
-    []
-    vs_binds
+    method! structure_item stri =
+      let expand stri =
+        let loc = stri.pstr_loc in
+        let infos = get_attributes stri |> filter_attributes pbt_name in
+        let n = List.length infos in
 
-and get_attributes_pbt attrs =
-  List.filter_map
-    (fun attribute ->
-      if String.equal attribute.attr_name.txt attribute_name then
-        Some (attribute.attr_payload, attribute.attr_loc)
-      else None)
-    attrs
+        match stri with
+        (* let f args = expr [@@pbt <properties>] *)
+        | [%stri let [%p? f] = [%e? _body]] when n > 0 ->
+            let infos =
+              let name = extract_name_from_pat f in
+              List.map (Helpers.update_name name) infos
+            in
+            Helpers.build_include loc (stri :: Tests.replace_pbt infos)
+        (* default cases *)
+        | x -> super#structure_item x
+      in
 
-let structure_item_contains_pbt stri = get_stri_pbt stri <> []
+      try if not !ignore then expand stri else super#structure_item stri
+      with e ->
+        Error.print_exception e ;
+        raise InternalError
+  end
 
-(*------ Replace structure item when attached with pbt attribute ------*)
-let rec replace_structure_item stri : structure_item list =
-  match stri.pstr_desc with
-  (* -- Recursives cases -- *)
-  (* module <Name> = struct .. end *)
-  | Pstr_module module_binding ->
-      [
-        {
-          stri with
-          pstr_desc = Pstr_module (replace_module_binding module_binding);
-        };
-      ]
-  (* -- Structures items where ppx_pbt is accepted -- *)
-  (* let <fname> <args> = <expr> *)
-  | Pstr_value _ ->
-      let attributes = get_stri_pbt stri in
-      if attributes <> [] then Tests.replace_pbt stri (get_stri_pbt stri)
-      else [ stri ]
-  | _ -> [ stri ]
-
-and replace_structure structure =
-  List.map replace_structure_item structure |> List.concat
-
-and replace_module_binding module_binding =
-  { module_binding with pmb_expr = replace_module_expr module_binding.pmb_expr }
-
-and replace_module_expr module_expr =
-  match module_expr.pmod_desc with
-  | Pmod_structure structure ->
-      {
-        module_expr with
-        pmod_desc = Pmod_structure (replace_structure structure);
-      }
-  | _ -> module_expr
-
-let expand stri =
-  try
-    if (not !ignore) && structure_item_contains_pbt stri then
-      replace_structure_item stri
-    else if (not !ignore) && Gen.stri_contains_gen stri then
-      Gen.replace_stri stri
-    else [ stri ]
-  with e ->
-    Error.print_exception e ;
-    raise InternalError
-
-let impl xs = xs |> List.map expand |> List.concat
-
-let () = Driver.register_transformation ~impl "ppx_pbt"
+let () =
+  let mapper = new mapper in
+  Driver.register_transformation "ppx_pbt" ~impl:mapper#structure

@@ -30,6 +30,7 @@ let from_string properties =
 
 open Ppxlib
 open Error
+open Helpers
 
 let get_tested_fun_pattern pattern =
   match pattern.ppat_desc with
@@ -109,22 +110,13 @@ and pbt_to_test ~loc name property gens args =
   let call = Properties.call_property loc name (property, args, gens) in
   [%expr fun [%p fun_pattern] -> [%e call]]
 
-let replace_tests ~loc stri properties =
-  let tests_generated =
-    match stri.pstr_desc with
-    | Pstr_value (_, values_bindings) ->
-        let name = get_tested_fun_values_binding values_bindings in
-        properties_to_test ~loc ~name properties
-    (* TODO: better error management *)
-    | _ -> assert false
-  in
-  stri :: tests_generated
-
-let replace_pbt structure_item = function
+let replace_pbt = function
   (* Structure item by construction can attach only one property *)
-  | [ (pbt, loc) ] ->
-      Payload.extract_pbt_from_payload pbt
+  | [ info ] ->
+      let loc = info.stri_loc in
+      let name = info.stri_name in
+      Payload.extract_pbt_from_payload (Option.get info.stri_payload)
       |> from_string
-      |> replace_tests ~loc structure_item
+      |> properties_to_test ~loc ~name
   (* TODO: better error management *)
   | _ -> assert false

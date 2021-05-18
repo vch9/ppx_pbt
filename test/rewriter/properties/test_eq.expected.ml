@@ -108,20 +108,22 @@ module Saturating_repr = struct
 
   let mul_fast x y = x * y
 
-  let scale_fast x y =
-    if x = 0 then 0
-    else if small_enough y then x * y
-    else if Int.(y > saturated / x) then saturated
-    else x * y
-    [@@pbt {| eq_res{mul}[uint, uint] |}]
+  include struct
+    let scale_fast x y =
+      if x = 0 then 0
+      else if small_enough y then x * y
+      else if Int.(y > saturated / x) then saturated
+      else x * y
+      [@@pbt {| eq_res{mul}[uint, uint] |}]
 
-  let test_scale_fast_is_eq_res =
-    QCheck.Test.make
-      ~name:"scale_fast_is_eq_res"
-      (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
-      (fun (gen_0, gen_1) -> Pbt.Properties.eq_res scale_fast mul gen_0 gen_1)
+    let test_scale_fast_is_eq_res =
+      QCheck.Test.make
+        ~name:"scale_fast_is_eq_res"
+        (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
+        (fun (gen_0, gen_1) -> Pbt.Properties.eq_res scale_fast mul gen_0 gen_1)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_scale_fast_is_eq_res ]
+    let _ = QCheck_runner.run_tests ~verbose:true [ test_scale_fast_is_eq_res ]
+  end
 
   let add x y =
     let z = x + y in
