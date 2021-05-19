@@ -64,3 +64,26 @@ let build_tuple loc = function
 
 let build_construct loc kname kargs =
   build_expression loc @@ Pexp_construct (kname, Some kargs)
+
+(* --- Building structure item --- *)
+let build_stri loc x = { pstr_desc = x; pstr_loc = loc }
+
+let build_include loc xs =
+  let include_infos x =
+    { pincl_mod = x; pincl_loc = loc; pincl_attributes = [] }
+  in
+  let x =
+    { pmod_desc = Pmod_structure xs; pmod_loc = loc; pmod_attributes = [] }
+  in
+  build_stri loc @@ Pstr_include (include_infos x)
+
+type info = {
+  stri_name : string;
+  stri_payload : payload option;
+  stri_loc : Location.t;
+}
+
+let create_info ?(name = "") ?payload ?(loc = Location.none) () =
+  { stri_name = name; stri_payload = payload; stri_loc = loc }
+
+let update_name name info = { info with stri_name = name }
