@@ -91,13 +91,12 @@ type 'a nested_pairs =
    nest_generators [a] => a
    nest_generators [a;b] => Double a b
    nest_generators [a;b;c] => Pair (Simple a) (Double b c)
-   nest_generators [a;b;c;d] => Pair (Double a b) (Double c d)
-
-   TODO:
-     - implement and test empty list *)
+   nest_generators [a;b;c;d] => Pair (Double a b) (Double c d) *)
 let rec nest_generators gens =
   match gens with
-  | [] -> failwith "TODO" (* insert unit ? *)
+  | [] ->
+      let loc = Location.none in
+      Simple [%expr Pbt.Gens.unit]
   | [ x ] -> Simple x
   | [ x; y ] -> Double (x, y)
   | gens when List.length gens mod 2 = 0 ->
