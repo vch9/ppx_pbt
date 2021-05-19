@@ -86,6 +86,8 @@ let builtin_properties loc x =
       { expr = [%expr Pbt.Properties.absorb_right]; n_gens = 1; n_args = 1 } );
     ( "absorbs",
       { expr = [%expr Pbt.Properties.absorbs]; n_gens = 1; n_args = 1 } );
+    ( "roundtrip",
+      { expr = [%expr Pbt.Properties.roundtrip]; n_gens = 1; n_args = 1 } );
   ]
   |> List.assoc_opt x
 

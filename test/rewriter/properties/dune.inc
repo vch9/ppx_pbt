@@ -147,6 +147,27 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
+ (targets test_saturing_roundtrip.expected.format)
+ (deps (:pp pp.exe) (:input test_saturing_roundtrip.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_saturing_roundtrip.actual)
+ (deps (:pp pp.exe) (:input test_saturing_roundtrip.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_saturing_roundtrip.actual) (:expected test_saturing_roundtrip.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_saturing_roundtrip)
+ (modules test_saturing_roundtrip)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
+
+(rule
  (targets test_unknown_property.expected.format)
  (deps (:pp pp.exe) (:input test_unknown_property.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))

@@ -70,4 +70,6 @@ module Properties = struct
   let floored_right f floor x = f x floor = floor
 
   let floored f floor x = floored_left f floor x && floored_right f floor x
+
+  let roundtrip f g x = f (g x) = x
 end

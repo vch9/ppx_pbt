@@ -100,4 +100,7 @@ module Properties : sig
   (** [floored_right f floor x y] test if the function stays floored when
       the right or left argument is floored. *)
   val floored : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+
+  (** [roundtrip f g x] test if f (g x) = x *)
+  val roundtrip : ('a -> 'b) -> ('b -> 'a) -> 'b -> bool
 end
