@@ -185,3 +185,19 @@ let ... =
 
 Arguments are inlined with `OCaml.identifer`, therefore the argument must be
 available at the scope of our generated test.
+
+Test your program with ppx_pbt
+---------------------------------
+
+`ppx_pbt` can be integrated to your dune project with the following example:
+
+```ocaml
+(library
+  (name foo)
+  (libraries ppx_pbt)
+  (inline_tests)
+  (preprocess (pps ppx_pbt)))
+```
+
+`dune build` will ignore the attributes attached to your OCaml files.  
+`dune runtest` will inline and execute QCheck property based tests.
