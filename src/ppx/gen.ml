@@ -24,6 +24,7 @@
 (*****************************************************************************)
 open Ppxlib
 open Error
+open Helpers
 
 let attr_gen = "gen"
 
@@ -146,31 +147,12 @@ and create_gen_from_tuple ~loc elems =
       in
       [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
-let rec get_stri_gen stri =
+let replace_stri infos stri =
+  let info = List.hd infos in
   match stri.pstr_desc with
+  (* TODO multiple types declaration ? *)
   | Pstr_type (_, [ x ]) ->
-      type_decl_contains_gen x (* TODO structure item inside structure item *)
-  | _ -> None
-
-and type_decl_contains_gen td =
-  (* We suppose we need only one attribute *)
-  List.find_opt attribute_contains_gen td.ptype_attributes
-
-and attribute_contains_gen attr = attr.attr_name.txt = attr_gen
-
-let stri_contains_gen stri = Option.is_some @@ get_stri_gen stri
-
-let replace_stri stri =
-  let gen =
-    match stri.pstr_desc with
-    (* TODO multiple types declaration ? *)
-    | Pstr_type (_, [ x ]) ->
-        let attr = get_stri_gen stri in
-        (* Replace only stri attached with attributes *)
-        assert (Option.is_some attr) ;
-        let loc = (Option.get attr).attr_loc in
-        Some (create_gen_from_td ~loc x)
-    (* TODO structure item inside structure item *)
-    | _ -> None
-  in
-  Option.fold ~none:[ stri ] ~some:(fun x -> [ stri; x ]) gen
+      let loc = info.stri_loc in
+      create_gen_from_td ~loc x
+  (* The function is called only on pstr_type *)
+  | _ -> assert false

@@ -1,23 +1,35 @@
-type t1 = int [@@gen]
+include struct
+  type t1 = int [@@gen]
 
-let gen_t1 = Pbt.Gens.int
+  let gen_t1 = Pbt.Gens.int
+end
 
-type t2 = float [@@gen]
+include struct
+  type t2 = float [@@gen]
 
-let gen_t2 = Pbt.Gens.float
+  let gen_t2 = Pbt.Gens.float
+end
 
-type t3 = char [@@gen]
+include struct
+  type t3 = char [@@gen]
 
-let gen_t3 = Pbt.Gens.char
+  let gen_t3 = Pbt.Gens.char
+end
 
-type t4 = string [@@gen]
+include struct
+  type t4 = string [@@gen]
 
-let gen_t4 = Pbt.Gens.string
+  let gen_t4 = Pbt.Gens.string
+end
 
-type t5 = unit [@@gen]
+include struct
+  type t5 = unit [@@gen]
 
-let gen_t5 = Pbt.Gens.unit
+  let gen_t5 = Pbt.Gens.unit
+end
 
-type t6 = bool [@@gen]
+include struct
+  type t6 = bool [@@gen]
 
-let gen_t6 = Pbt.Gens.bool
+  let gen_t6 = Pbt.Gens.bool
+end

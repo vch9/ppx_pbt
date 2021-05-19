@@ -45,6 +45,8 @@ let get_attributes stri =
   | Pstr_eval (_, attributes) -> attributes
   | Pstr_value (_, vbs) ->
       List.map (fun vb -> vb.pvb_attributes) vbs |> List.concat
+  | Pstr_type (_, tds) ->
+      List.map (fun td -> td.ptype_attributes) tds |> List.concat
   | _ -> []
 
 let extract_name_from_pat pat =
@@ -59,17 +61,23 @@ class mapper =
     method! structure_item stri =
       let expand stri =
         let loc = stri.pstr_loc in
-        let infos = get_attributes stri |> filter_attributes pbt_name in
-        let n = List.length infos in
+
+        let infos_pbt = get_attributes stri |> filter_attributes pbt_name in
+        let infos_gen = get_attributes stri |> filter_attributes gen_name in
+        let n_pbt = List.length infos_pbt in
+        let n_gen = List.length infos_gen in
 
         match stri with
         (* let f args = expr [@@pbt <properties>] *)
-        | [%stri let [%p? f] = [%e? _body]] when n > 0 ->
+        | [%stri let [%p? f] = [%e? _body]] when n_pbt > 0 ->
             let infos =
               let name = extract_name_from_pat f in
-              List.map (Helpers.update_name name) infos
+              List.map (Helpers.update_name name) infos_pbt
             in
             Helpers.build_include loc (stri :: Tests.replace_pbt infos)
+        (* type t = .. *)
+        | { pstr_desc = Pstr_type _; _ } when n_gen > 0 ->
+            Helpers.build_include loc [ stri; Gen.replace_stri infos_gen stri ]
         (* default cases *)
         | x -> super#structure_item x
       in
