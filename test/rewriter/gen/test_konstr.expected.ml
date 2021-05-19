@@ -37,3 +37,14 @@ let pp_t3 = function
   | X t1 -> Printf.sprintf "X (%s)" (pp_t1 t1)
   | Y t2 -> Printf.sprintf "Y (%s)" (pp_t2 t2)
   | Z s -> Printf.sprintf "Z %s" s
+
+include struct
+  type t4 = Left | Right [@@gen]
+
+  let gen_t4 =
+    QCheck.oneof
+      [
+        QCheck.make @@ QCheck.Gen.return Left;
+        QCheck.make @@ QCheck.Gen.return Right;
+      ]
+end

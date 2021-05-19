@@ -52,6 +52,18 @@ let build_nested_gens loc gens =
 
   (gens, gens_name, pat)
 
+(* Returns length of Konstructor arguments
+
+   type t =
+   | Node of int * t * t
+   | Leaf
+
+   len_cstr_args (Node of int * t * t) => 3
+   len_cstr_args (Leaf)                => 0 *)
+let len_cstr_args = function
+  | Pcstr_tuple xs -> List.length xs
+  | Pcstr_record _ -> raise (CaseUnsupported "len_cstr_args")
+
 (* Helper function to check if the type is recursive *)
 let rec is_recursive type_name = function
   | Ptype_variant cstrs ->
@@ -107,6 +119,16 @@ and create_from_kind_rec _kind =
   raise (CaseUnsupported "create_from_kind_rec")
 
 and create_gen_from_constructor_decl ~loc cd =
+  if len_cstr_args cd.pcd_args > 0 then create_gen_from_cd_with_args ~loc cd
+  else create_gen_from_cd_without_args ~loc cd
+
+and create_gen_from_cd_without_args ~loc cd =
+  let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
+  let k = Helpers.build_construct loc k_name None in
+
+  [%expr QCheck.make @@ QCheck.Gen.return [%e k]]
+
+and create_gen_from_cd_with_args ~loc cd =
   let (gens, gens_name, pat) =
     build_nested_gens loc @@ create_gen_from_cstr_args ~loc cd.pcd_args
   in
@@ -117,7 +139,7 @@ and create_gen_from_constructor_decl ~loc cd =
     List.map (Helpers.build_ident loc) gens_name |> Helpers.build_tuple loc
   in
 
-  let build = Helpers.build_construct loc k_name k_args in
+  let build = Helpers.build_construct loc k_name (Some k_args) in
 
   [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 

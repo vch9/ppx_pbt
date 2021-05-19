@@ -14,3 +14,5 @@ let pp_t3 = function
   | X t1 -> Printf.sprintf "X (%s)" (pp_t1 t1)
   | Y t2 -> Printf.sprintf "Y (%s)" (pp_t2 t2)
   | Z s -> Printf.sprintf "Z %s" s
+
+type t4 = Left | Right [@@gen]
