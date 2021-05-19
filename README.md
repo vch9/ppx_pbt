@@ -47,6 +47,11 @@ Exhaustive list of [gen](https://gitlab.com/vch9/ppx_pbt/-/tree/dev/src/pbt/pbt.
 ```
 int
 uint
+float
+char
+string
+bool
+unit
 ```
 
 Usage
