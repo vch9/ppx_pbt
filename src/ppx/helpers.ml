@@ -63,7 +63,7 @@ let build_tuple loc = function
   | xs -> build_expression loc @@ Pexp_tuple xs
 
 let build_construct loc kname kargs =
-  build_expression loc @@ Pexp_construct (kname, Some kargs)
+  build_expression loc @@ Pexp_construct (kname, kargs)
 
 (* --- Building structure item --- *)
 let build_stri loc x = { pstr_desc = x; pstr_loc = loc }
