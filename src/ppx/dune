@@ -4,7 +4,9 @@
  (kind ppx_rewriter)
  (libraries ppxlib menhirLib qcheck)
  (ppx_runtime_libraries ppx_pbt.pbt)
- (preprocess (pps ppxlib.metaquot)))
+ (preprocess (pps ppxlib.metaquot))
+ (inline_tests.backend
+  (generate_runner (echo "let () = print_string \"Ppx_pbt generated tests\n\";;"))))
 
 (ocamllex lexer)
 
