@@ -3,10 +3,11 @@
  (public_name ppx_pbt.ppx_pbt)
  (kind ppx_rewriter)
  (libraries ppxlib menhirLib qcheck)
- (ppx_runtime_libraries ppx_pbt.pbt)
+ (ppx_runtime_libraries ppx_pbt.pbt ppx_pbt.runner)
  (preprocess (pps ppxlib.metaquot))
  (inline_tests.backend
-  (generate_runner (echo "let () = print_string \"Ppx_pbt generated tests\n\";;"))))
+  (generate_runner (echo "let () =  Runner.run () ;;"))
+  (runner_libraries qcheck ppx_pbt.runner)))
 
 (ocamllex lexer)
 

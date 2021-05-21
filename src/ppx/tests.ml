@@ -70,10 +70,8 @@ let rec properties_to_test ~loc ~name properties =
   let names =
     Helpers.build_list loc (List.map (Helpers.build_ident loc) names)
   in
-  let runner =
-    [%stri let _ = QCheck_runner.run_tests ~verbose:true [%e names]]
-  in
-  tests @ [ runner ]
+  let add_runner = [%stri let () = Runner.add_tests [%e names]] in
+  tests @ [ add_runner ]
 
 and property_to_test ~loc ~name (property, args, gens) =
   let (pat_name, expr_name, test_name) = name_to_test ~loc name property in
