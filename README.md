@@ -65,15 +65,16 @@ let add x y = x + y
 
 (* which becomes *)
 
-let add x y = x + y
+include struct
+  let add x y = x + y
 
-let test_add_is_commutative =
-  QCheck.Test.make ~name:"add_is_commutative"
-  (QCheck.pair Pbt.Gens.int Pbt.Gens.int)
-  (fun (x, y) -> Pbt.Properties.commutative add x y)
+  let test_add_is_commutative =
+    QCheck.Test.make ~name:"add_is_commutative"
+    (QCheck.pair Pbt.Gens.int Pbt.Gens.int)
+    (fun (x, y) -> Pbt.Properties.commutative add x y)
 
-let _ =
-  QCheck_runner.run_tests ~verbose:true [ test_add_is_commutative ]
+  let () = Runner.add_tests [ test_add_is_commutative]
+end
 ```
 
 Use your own property
@@ -84,6 +85,8 @@ Local properties can be used instead of builtin properties:
 ```ocaml
 let even f x = (f x) mod 2 = 0
 
+let inc x = x + 2
+
 let add x y = x + y
 [@@pbt {| is_even[int] |}
 
@@ -93,13 +96,16 @@ let even f x = (f x) mod 2 = 0
 
 let inc x = x + 2
 
-let test_inc_is_even =
-  QCheck.Test.make ~name:"inc_is_even"
-  Pbt.Gens.int
-  (fun x -> even inc x)
+include struct
+  let add x y = x + y
 
-let _ =
-  QCheck_runner.run_tests ~verbose:true [ test_inc_is_even ]
+  let test_inc_is_even =
+    QCheck.Test.make ~name:"inc_is_even"
+    Pbt.Gens.int
+    (fun x -> even inc x)
+
+  let () = Runner.add_tests [ test_inc_is_even ]
+end
 ```
 
 Properties comes either from:
@@ -139,15 +145,16 @@ let abs_int = QCheck.map (fun x -> abs x) QCheck.int
 
 let positive f x y = (f x y) > 0
 
-let mul x y = x * y
+include struct
+  let mul x y = x * y
 
-let test_mul_is_positive =
-  QCheck.Test.make ~name:"mul_is_positive"
-  (QCheck.pair abs_int abs_int)
-  (fun (x, y) -> positive mul x y)
-  
-let _ =
-  QCheck_runner.run_tests ~verbose:true [ test_mul_is_positive ]
+  let test_mul_is_positive =
+    QCheck.Test.make ~name:"mul_is_positive"
+    (QCheck.pair abs_int abs_int)
+    (fun (x, y) -> positive mul x y)
+
+  let () = Runner.add__tests [ test_mul_is_positive ]
+end
 ```
 
 Use properties with arguments
@@ -164,13 +171,16 @@ let add x y = x + y
 
 (* which becomes *)
 
-let test_add_is_neutrals =
-  QCheck.Test.make ~name:"add_is_neutrals"
-  Pbt.Gens.int
-  (fun (x, y) -> Pbt.Properties.neutrals add x)
+include struct
+  let add x y = x + y
 
-let _ =
-  QCheck_runner.run_tests ~verbose:true [ test_add_is_neutrals ]
+  let test_add_is_neutrals =
+    QCheck.Test.make ~name:"add_is_neutrals"
+    Pbt.Gens.int
+    (fun (x, y) -> Pbt.Properties.neutrals add x)
+
+  let () = Runner.add_tests [ test_add_is_neutrals ]
+end
 ```
 
 Property's arguments are the first parameters given to the property:
