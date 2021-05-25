@@ -124,7 +124,7 @@ module Saturating_repr = struct
       QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
           Pbt.Properties.capped add saturated gen_0)
 
-    let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_capped ]
+    let () = Runner.add_tests [ test_add_is_capped ]
   end
 
   let sub x y = Int.max (x - y) 0

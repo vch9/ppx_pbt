@@ -214,8 +214,7 @@ module Arith = struct
       QCheck.Test.make ~name:"integral_to_z_is_roundtrip" gen_z (fun gen_0 ->
           Pbt.Properties.roundtrip integral_to_z integral_exn gen_0)
 
-    let _ =
-      QCheck_runner.run_tests ~verbose:true [ test_integral_to_z_is_roundtrip ]
+    let () = Runner.add_tests [ test_integral_to_z_is_roundtrip ]
   end
 
   let ceil x =

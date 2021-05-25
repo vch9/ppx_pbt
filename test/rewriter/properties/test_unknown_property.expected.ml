@@ -9,5 +9,5 @@ include struct
       (QCheck.pair Pbt.Gens.int Pbt.Gens.int)
       (fun (gen_0, gen_1) -> my_property add gen_0 gen_1)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_my_property ]
+  let () = Runner.add_tests [ test_add_is_my_property ]
 end

@@ -8,5 +8,5 @@ include struct
       (fun (gen_0, (gen_1, gen_2)) ->
         Pbt.Properties.associative add gen_0 gen_1 gen_2)
 
-  let _ = QCheck_runner.run_tests ~verbose:true [ test_add_is_associative ]
+  let () = Runner.add_tests [ test_add_is_associative ]
 end

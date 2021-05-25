@@ -173,10 +173,8 @@ module Arith = struct
       QCheck.Test.make ~name:"add_is_neutral_right" Pbt.Gens.uint (fun gen_0 ->
           Pbt.Properties.neutral_right add zero gen_0)
 
-    let _ =
-      QCheck_runner.run_tests
-        ~verbose:true
-        [ test_add_is_neutral_left; test_add_is_neutral_right ]
+    let () =
+      Runner.add_tests [ test_add_is_neutral_left; test_add_is_neutral_right ]
   end
 
   let min = S.min

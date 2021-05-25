@@ -122,7 +122,7 @@ module Saturating_repr = struct
         (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
         (fun (gen_0, gen_1) -> Pbt.Properties.eq_res scale_fast mul gen_0 gen_1)
 
-    let _ = QCheck_runner.run_tests ~verbose:true [ test_scale_fast_is_eq_res ]
+    let () = Runner.add_tests [ test_scale_fast_is_eq_res ]
   end
 
   let add x y =
