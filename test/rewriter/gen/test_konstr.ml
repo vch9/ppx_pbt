@@ -16,3 +16,6 @@ let pp_t3 = function
   | Z s -> Printf.sprintf "Z %s" s
 
 type t4 = Left | Right [@@gen]
+
+type t5 = Simple of int | Double of int * int | Triple of int * int * int
+[@@gen]

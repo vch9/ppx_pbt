@@ -48,3 +48,9 @@ include struct
         QCheck.make @@ QCheck.Gen.return Right;
       ]
 end
+
+include struct
+  type t4 = A of int * int * int
+
+  let gen_t4 = failwith "TODO"
+end
