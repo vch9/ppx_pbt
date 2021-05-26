@@ -28,13 +28,13 @@ open Ppxlib
 (* ------------ Print type_declaration ------------ *)
 (* ------------------------------------------------ *)
 
-let list_to_str ?(sep = " ; ") f l =
+let list_to_str ?(sep = " ; ") ?(left = "[") ?(right = "]") f l =
   let rec aux = function
     | [] -> ""
     | [ x ] -> f x
     | x :: xs -> f x ^ sep ^ aux xs
   in
-  Printf.sprintf "[ %s ]" (aux l)
+  Printf.sprintf "%s %s %s" left (aux l) right
 
 let rec type_decl_to_str td =
   Printf.sprintf
@@ -64,8 +64,21 @@ and type_cstr_to_str (x, y, _) =
 
 and type_cstrs_to_str cstrs = list_to_str type_cstr_to_str cstrs
 
-and type_param_to_str (ct, (_variance, _injectivity)) =
-  Printf.sprintf "(%s, (_, _))" (core_type_to_str ct)
+and type_param_to_str (ct, (variance, injectivity)) =
+  Printf.sprintf
+    "(%s, (%s, %s))"
+    (core_type_to_str ct)
+    (variance_to_str variance)
+    (injectivity_to_str injectivity)
+
+and variance_to_str = function
+  | Covariant -> "covariant"
+  | Contravariant -> "contravariant"
+  | NoVariance -> "noVariance"
+
+and injectivity_to_str = function
+  | Injective -> "injective"
+  | NoInjectivity -> "noInjectivity"
 
 and type_params_to_str params = list_to_str type_param_to_str params
 
@@ -76,6 +89,15 @@ and core_type_to_str ct =
         "K (%s, %s)"
         (longident_to_str id.txt)
         (core_types_to_str cts)
+  | Ptyp_poly (strs, ct) ->
+      Printf.sprintf
+        "%s (%s)"
+        (list_to_str (fun s -> s.txt) strs)
+        (core_type_to_str ct)
+  | Ptyp_any -> "any"
+  | Ptyp_var s -> s
+  | Ptyp_tuple cts ->
+      list_to_str ~left:"(" ~sep:" , " ~right:")" core_type_to_str cts
   | _ -> "TODO else core_type"
 
 and core_types_to_str cts = list_to_str core_type_to_str cts
@@ -84,8 +106,17 @@ and type_kind_to_str = function
   | Ptype_abstract -> "abstract"
   (* TODO useful to print here *)
   | Ptype_variant constrs -> constrs_declaration_to_str constrs
-  | Ptype_record _labels -> "label_declaration list"
+  | Ptype_record labels ->
+      list_to_str ~left:"{" ~right:"}" label_declaration_to_str labels
   | Ptype_open -> "open"
+
+and label_declaration_to_str ld =
+  let name = ld.pld_name.txt in
+  let mut =
+    match ld.pld_mutable with Mutable -> "mutable" | Immutable -> "immutable"
+  in
+  let ty = core_type_to_str ld.pld_type in
+  Printf.sprintf "(%s %s : %s)" mut name ty
 
 and constrs_declaration_to_str cstrs =
   list_to_str ~sep:"\n" constr_declaration_to_str cstrs
