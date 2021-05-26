@@ -91,6 +91,7 @@ let rec create_gen_from_td ~loc td =
   let name = Helpers.build_pattern_var loc @@ gen_name type_name in
   let body =
     match td.ptype_manifest with
+    (* TODO, can everything be ignored when manifest is present *)
     | None -> create_gen_from_kind ~loc type_name td.ptype_kind
     | Some ct -> create_gen_from_core_type ~loc ct
   in
@@ -98,7 +99,54 @@ let rec create_gen_from_td ~loc td =
 
 and create_gen_from_core_type ~loc ct =
   match ct.ptyp_desc with
-  | Ptyp_constr (lg, _c_types) -> create_gen_from_longident ~loc lg.txt
+  (*
+    Primitives types are found in Ptyp_constr when c_types is empty
+
+    Example with c_types = []:
+
+    {[
+    type t1 = int [@@gen]
+    type t2 = string [@@gen]
+    type t3 = t1 [@@gen]
+
+    let gen_t1 = QCheck.int
+    let gen_t2 = QCheck.string
+    let gen_t3 = gen_t1
+    ]}
+
+    Example with c_types <> []:
+
+    {[
+    type 'a t1 = 'a list [@@gen]
+    type 'a t2 = 'a option [@@gen]
+
+    let gen_t1 gen_a = QCheck.list gen_a
+    let gen_t2 gen_a = QCheck.option gen_a
+    ]}
+   *)
+  | Ptyp_constr (lg, c_types) -> (
+      match c_types with
+      | [] -> create_gen_from_longident ~loc lg.txt
+      | _ ->
+          (* TODO: handle this *)
+          raise (CaseUnsupported "Ptyp_constr with args"))
+  (*
+      Tuples are translated in different ways based on their sizes:
+
+      Example :
+
+      {[
+      type two = int * int [@@gen]
+      type three = int * int * int [@@gen]
+      type four = int * int * int * int [@@gen]
+      type five = int * int * int * int * int [@@gen]
+
+      let gen_two = QCheck.(pair int int)
+      let gen_three = QCheck.(triple int int int)
+      let gen_four = QCheck.(triple int int int int)
+      let gen_five = QCheck.(pair (pair int (pair int int) (pair int int))
+      ]}
+  *)
   | Ptyp_tuple elems -> create_gen_from_tuple ~loc elems
   | _ -> raise (CaseUnsupported "create_gen_from_core_type")
 
@@ -118,6 +166,90 @@ and create_from_kind_rec _kind =
   (* TODO *)
   raise (CaseUnsupported "create_from_kind_rec")
 
+(*
+  type constructor_declaration = {
+       pcd_name : string loc;
+       pcd_args : constructor_arguments;
+       pcd_res : core_type option;
+       pcd_loc : location;
+       pcd_attributes : attributes;
+  }
+
+  pcd_name       <- name of the constructor (A, K, Node, Leaf, Some ..)
+  pcd_args       <- arguments of the constructor (Some of int, Node of int * tree * tree ..)
+  pcd_res        <- TODO: what is pcd_res ?
+  pcd_attributes <- TODO: put weight on a constructor declaration
+
+  Example without pcd_attributes:
+
+  {[
+  type num =
+  | Int of int
+  | Float of float
+  [@@gen]
+
+  let gen_num =
+    QCheck.oneof [
+      QCheck.map (fun x -> Int x) QCheck.int ;
+      QCheck.map (fun y -> Float y) QCheck.float ;
+    ]
+  ]}
+
+  Example with pcd_attributes:
+
+  {[
+  type num =
+  | Int of int [@gen 2]
+  | Float of float [@gen 1]
+  [@@gen]
+
+  let gen_num =
+    QCheck.frequency [
+      (2, QCheck.map (fun x -> Int x) QCheck.int) ;
+      (1, QCheck.map (fun y -> Float y) QCheck.float) ;
+    ]
+  ]}
+
+  Example of pcd_args:
+
+  {[
+  type t = A | B | C
+  [@@gen]
+
+  let gen_t =
+    QCheck.oneof [
+      QCheck.make @@ QCheck.Gen.return A ;
+      QCheck.make @@ QCheck.Gen.return B ;
+      QCheck.make @@ QCheck.Gen.return C ;
+    ]
+  ]}
+
+  [
+    pcd_name = A ; pcd_args = [];
+    pcd_name = B ; pcd_args = [];
+    pcd_name = C ; pcd_args = [];
+  ]
+
+  {[
+  type t = Simple of int
+  | Double of int * int
+  | Triple of int * int * int
+  [@@gen]
+
+  let gen_t =
+    QCheck.oneof [
+      QCheck.map (fun x -> Simple x) QCheck.int ;
+      QCheck.map (fun (x,y) -> Double (x,y)) (QCheck.pair QCheck.int QCheck.int) ;
+      QCheck.map (fun (x,y,z) -> Triple (x,y,z) (QCheck.triple QCheck.int QCheck.int QCheck.int) ;
+    ]
+  ]}
+
+  [
+    pcd_name = Simple ; pcd_args = [int];
+    pcd_name = Double ; pcd_args = [int; int];
+    pcd_name = Triple ; pcd_args = [int; int; int];
+  ]
+*)
 and create_gen_from_constructor_decl ~loc cd =
   if len_cstr_args cd.pcd_args > 0 then create_gen_from_cd_with_args ~loc cd
   else create_gen_from_cd_without_args ~loc cd
@@ -172,9 +304,24 @@ and create_gen_from_tuple ~loc elems =
 let replace_stri infos stri =
   let info = List.hd infos in
   match stri.pstr_desc with
-  (* TODO multiple types declaration ? *)
-  | Pstr_type (_, [ x ]) ->
+  (*
+      Pstr_type of Nonrecursive * type_declaration list
+
+      type t = ...
+
+      TODO: Can Nonrecursive type structure item can have more that one
+      type declaration ?
+  *)
+  | Pstr_type (Nonrecursive, [ x ]) ->
       let loc = info.stri_loc in
       create_gen_from_td ~loc x
-  (* The function is called only on pstr_type *)
+  (*
+      Pstr_type of Recursive * type_declaration list
+
+      type t = ...
+      and t' = ...
+  *)
+  | Pstr_type (Recursive, xs) ->
+      List.iter Pp.print_type_decl xs ;
+      raise (CaseUnsupported "Recursive type")
   | _ -> assert false
