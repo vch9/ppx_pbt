@@ -315,8 +315,7 @@ and create_gen_from_string ~loc s =
 
 and create_gen_from_longident ~loc = function
   | Lident s -> create_gen_from_string ~loc s
-  (* | Ldot (lg, s) ->
-   *    Helpers.build_ident loc @@ Ldot (lg, gen_name s) *)
+  | Ldot (lg, s) -> Helpers.build_ident loc @@ Ldot (lg, gen_name s)
   | _ -> raise (CaseUnsupported "create_gen_from_longident")
 
 and create_gen_from_tuple ~loc elems =
