@@ -37,6 +37,8 @@ module Gens = struct
   let bool = QCheck.bool
 
   let unit = QCheck.unit
+
+  let option x = QCheck.option x
 end
 
 module Properties = struct

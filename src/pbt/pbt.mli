@@ -44,6 +44,9 @@ module Gens : sig
 
   (** Unit generator *)
   val unit : unit QCheck.arbitrary
+
+  (** 'a option generator *)
+  val option : 'a QCheck.arbitrary -> 'a option QCheck.arbitrary
 end
 
 module Properties : sig
