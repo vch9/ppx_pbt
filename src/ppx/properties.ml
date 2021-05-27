@@ -165,7 +165,7 @@ let pattern_from_gens loc gens =
   (create_pattern loc args, args)
 
 let args_to_expr loc args =
-  let f x = (Nolabel, Helpers.build_ident loc x) in
+  let f x = (Nolabel, Helpers.build_lident loc x) in
   List.map f args
 
 (* Build the call to the property intented to be tested
@@ -177,4 +177,4 @@ let call_property loc fun_name (name, args, gens) =
   in
   match builtin_properties loc name with
   | Some { expr = fun_expr; _ } -> Helpers.build_apply loc fun_expr args
-  | None -> Helpers.build_apply loc (Helpers.build_ident loc name) args
+  | None -> Helpers.build_apply loc (Helpers.build_lident loc name) args

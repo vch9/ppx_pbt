@@ -297,7 +297,7 @@ and create_gen_from_cd_with_args ~loc cd =
   let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
 
   let k_args =
-    List.map (Helpers.build_ident loc) gens_name |> Helpers.build_tuple loc
+    List.map (Helpers.build_lident loc) gens_name |> Helpers.build_tuple loc
   in
 
   let build = Helpers.build_construct loc k_name (Some k_args) in
@@ -311,10 +311,12 @@ and create_gen_from_cstr_args ~loc = function
 and create_gen_from_string ~loc s =
   match Gens.builtin_generators loc s with
   | Some e -> e
-  | None -> Helpers.build_ident loc @@ gen_name s
+  | None -> Helpers.build_lident loc @@ gen_name s
 
 and create_gen_from_longident ~loc = function
   | Lident s -> create_gen_from_string ~loc s
+  (* | Ldot (lg, s) ->
+   *    Helpers.build_ident loc @@ Ldot (lg, gen_name s) *)
   | _ -> raise (CaseUnsupported "create_gen_from_longident")
 
 and create_gen_from_tuple ~loc elems =
@@ -328,7 +330,7 @@ and create_gen_from_tuple ~loc elems =
   | gens ->
       let (gens, gens_name, pat) = build_nested_gens loc gens in
       let build =
-        List.map (Helpers.build_ident loc) gens_name |> Helpers.build_tuple loc
+        List.map (Helpers.build_lident loc) gens_name |> Helpers.build_tuple loc
       in
       [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 

@@ -57,7 +57,7 @@ let replace_gens loc gen_ids =
   let replace gen_id =
     match builtin_generators loc gen_id with
     | Some gen -> gen
-    | None -> Helpers.build_ident loc gen_id
+    | None -> Helpers.build_lident loc gen_id
   in
   List.map replace gen_ids
 

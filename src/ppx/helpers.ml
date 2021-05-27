@@ -53,7 +53,9 @@ let rec build_list loc = function
 let build_apply loc to_apply args =
   build_expression loc @@ Pexp_apply (to_apply, args)
 
-let build_ident loc x =
+let build_ident loc x = build_expression loc @@ Pexp_ident { txt = x; loc }
+
+let build_lident loc x =
   build_expression loc @@ Pexp_ident { txt = Lident x; loc }
 
 let build_longident loc x = { txt = x; loc }

@@ -68,7 +68,7 @@ let rec properties_to_test ~loc ~name properties =
     List.split @@ List.map (property_to_test ~loc ~name) properties
   in
   let names =
-    Helpers.build_list loc (List.map (Helpers.build_ident loc) names)
+    Helpers.build_list loc (List.map (Helpers.build_lident loc) names)
   in
   let add_runner = [%stri let () = Runner.add_tests [%e names]] in
   tests @ [ add_runner ]
