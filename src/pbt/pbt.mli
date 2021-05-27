@@ -47,6 +47,9 @@ module Gens : sig
 
   (** 'a option generator *)
   val option : 'a QCheck.arbitrary -> 'a option QCheck.arbitrary
+
+  (** 'a list generator *)
+  val list : 'a QCheck.arbitrary -> 'a list QCheck.arbitrary
 end
 
 module Properties : sig

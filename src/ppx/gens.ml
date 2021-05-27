@@ -37,6 +37,7 @@ let builtin_generators loc x =
     ("bool", [%expr Pbt.Gens.bool]);
     ("unit", [%expr Pbt.Gens.unit]);
     ("option", [%expr Pbt.Gens.option]);
+    ("list", [%expr Pbt.Gens.list]);
   ]
   |> List.assoc_opt x
 
