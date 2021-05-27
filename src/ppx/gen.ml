@@ -86,15 +86,40 @@ and is_recursive_core_type type_name ct =
 
 let gen_name s = "gen_" ^ s
 
+(*
+   Curryfication of arguments
+
+   curry_args __loc__ [x; y; z] body
+
+   ->
+
+   fun x -> fun y -> fun z -> [body]
+*)
+let rec curry_args ~loc args body =
+  match args with
+  | [] -> body
+  | x :: xs -> [%expr fun [%p x] -> [%e curry_args ~loc xs body]]
+
+let extract_args ~loc params =
+  let to_pat (ct, _) =
+    match ct.ptyp_desc with
+    | Ptyp_var s -> Helpers.build_pattern_var loc @@ gen_name s
+    | _ ->
+        raise (CaseUnsupported "Type_declaration.ptype_params in extract_args")
+  in
+  List.map to_pat params
+
 let rec create_gen_from_td ~loc td =
   let type_name = td.ptype_name.txt in
   let name = Helpers.build_pattern_var loc @@ gen_name type_name in
+  let args = extract_args ~loc td.ptype_params in
   let body =
     match td.ptype_manifest with
-    (* TODO, can everything be ignored when manifest is present *)
+    (* TODO, can everything be ignored when manifest is present ? *)
     | None -> create_gen_from_kind ~loc type_name td.ptype_kind
     | Some ct -> create_gen_from_core_type ~loc ct
   in
+  let body = curry_args ~loc args body in
   [%stri let [%p name] = [%e body]]
 
 and create_gen_from_core_type ~loc ct =
@@ -127,9 +152,12 @@ and create_gen_from_core_type ~loc ct =
   | Ptyp_constr (lg, c_types) -> (
       match c_types with
       | [] -> create_gen_from_longident ~loc lg.txt
-      | _ ->
-          (* TODO: handle this *)
-          raise (CaseUnsupported "Ptyp_constr with args"))
+      | xs ->
+          let gen_t = create_gen_from_longident ~loc lg.txt in
+          let gen_args =
+            List.map (fun x -> (Nolabel, create_gen_from_core_type ~loc x)) xs
+          in
+          Helpers.build_apply loc gen_t gen_args)
   (*
       Tuples are translated in different ways based on their sizes:
 
@@ -148,6 +176,7 @@ and create_gen_from_core_type ~loc ct =
       ]}
   *)
   | Ptyp_tuple elems -> create_gen_from_tuple ~loc elems
+  | Ptyp_var s -> create_gen_from_string ~loc s
   | _ -> raise (CaseUnsupported "create_gen_from_core_type")
 
 and create_gen_from_kind ~loc type_name kind =
@@ -279,11 +308,13 @@ and create_gen_from_cstr_args ~loc = function
   | Pcstr_tuple cts -> List.map (create_gen_from_core_type ~loc) cts
   | _ -> raise (CaseUnsupported "create_gen_from_cstr_arg")
 
+and create_gen_from_string ~loc s =
+  match Gens.builtin_generators loc s with
+  | Some e -> e
+  | None -> Helpers.build_ident loc @@ gen_name s
+
 and create_gen_from_longident ~loc = function
-  | Lident s -> (
-      match Gens.builtin_generators loc s with
-      | Some e -> e
-      | None -> Helpers.build_ident loc @@ gen_name s)
+  | Lident s -> create_gen_from_string ~loc s
   | _ -> raise (CaseUnsupported "create_gen_from_longident")
 
 and create_gen_from_tuple ~loc elems =
@@ -305,23 +336,22 @@ let replace_stri infos stri =
   let info = List.hd infos in
   match stri.pstr_desc with
   (*
-      Pstr_type of Nonrecursive * type_declaration list
+      Pstr_type of _ * [type_declaration]
 
       type t = ...
 
-      TODO: Can Nonrecursive type structure item can have more that one
-      type declaration ?
-  *)
-  | Pstr_type (Nonrecursive, [ x ]) ->
+      TODO: does Nonrecursive type exists ?
+   *)
+  | Pstr_type (_, [ x ]) ->
       let loc = info.stri_loc in
       create_gen_from_td ~loc x
   (*
-      Pstr_type of Recursive * type_declaration list
+      Pstr_type of _ * type_declaration list
 
       type t = ...
       and t' = ...
   *)
-  | Pstr_type (Recursive, xs) ->
+  | Pstr_type (_, xs) ->
       List.iter Pp.print_type_decl xs ;
       raise (CaseUnsupported "Recursive type")
   | _ -> assert false
