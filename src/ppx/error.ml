@@ -23,6 +23,8 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+open Ppxlib
+
 exception InternalError
 
 exception SyntaxError of string
@@ -32,6 +34,8 @@ exception CaseUnsupported of string
 exception PropertyNotSupported of string
 
 exception PropertyGeneratorsMissing of string * int * int
+
+exception LocError of location * string
 
 let syntax_error c = raise (SyntaxError (Format.sprintf "%c" c))
 
@@ -46,4 +50,5 @@ let print_exception = function
         s
         actual
         expected
+  | LocError (loc, s) -> Ppxlib__Location.raise_errorf ~loc "%s" s
   | e -> Format.printf "InternalError (%s)\n" (Printexc.to_string e)
