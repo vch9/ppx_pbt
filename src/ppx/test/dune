@@ -1,0 +1,9 @@
+(library
+ (name test)
+ (libraries ppxlib menhirLib qcheck common)
+ (preprocess (pps ppxlib.metaquot)))
+
+(ocamllex lexer)
+
+(menhir
+ (modules parser))
