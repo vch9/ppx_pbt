@@ -7,7 +7,7 @@ module SomeModule = struct
 
   module SomeOtherModule = struct
     include struct
-      type t = float
+      type t = float [@@gen]
 
       let gen_t = Pbt.Gens.float
     end
@@ -15,7 +15,7 @@ module SomeModule = struct
 end
 
 include struct
-  type t = Int of SomeModule.t | Float of SomeModule.SomeOtherModule.t
+  type t = Int of SomeModule.t | Float of SomeModule.SomeOtherModule.t [@@gen]
 
   let gen_t =
     QCheck.oneof

@@ -50,7 +50,18 @@ include struct
 end
 
 include struct
-  type t4 = A of int * int * int
+  type t5 = Simple of int | Double of int * int | Triple of int * int * int
+  [@@gen]
 
-  let gen_t4 = failwith "TODO"
+  let gen_t5 =
+    QCheck.oneof
+      [
+        QCheck.map (fun gen_0 -> Simple gen_0) Pbt.Gens.int;
+        QCheck.map
+          (fun (gen_0, gen_1) -> Double (gen_0, gen_1))
+          (QCheck.pair Pbt.Gens.int Pbt.Gens.int);
+        QCheck.map
+          (fun (gen_0, (gen_1, gen_2)) -> Triple (gen_0, gen_1, gen_2))
+          (QCheck.pair Pbt.Gens.int (QCheck.pair Pbt.Gens.int Pbt.Gens.int));
+      ]
 end

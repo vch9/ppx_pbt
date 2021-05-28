@@ -42,27 +42,6 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
- (targets test_gadt.expected.format)
- (deps (:pp pp.exe) (:input test_gadt.expected.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (targets test_gadt.actual)
- (deps (:pp pp.exe) (:input test_gadt.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (alias runtest)
- (deps (:actual test_gadt.actual) (:expected test_gadt.expected.format))
- (action (diff %{expected} %{actual})))
-
-(test
- (name test_gadt)
- (modules test_gadt)
- (libraries zarith data-encoding)
- (preprocess (pps ppx_pbt)))
-
-(rule
  (targets test_konstr.expected.format)
  (deps (:pp pp.exe) (:input test_konstr.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
@@ -164,48 +143,6 @@
 (test
  (name test_record)
  (modules test_record)
- (libraries zarith data-encoding)
- (preprocess (pps ppx_pbt)))
-
-(rule
- (targets test_recursive.expected.format)
- (deps (:pp pp.exe) (:input test_recursive.expected.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (targets test_recursive.actual)
- (deps (:pp pp.exe) (:input test_recursive.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (alias runtest)
- (deps (:actual test_recursive.actual) (:expected test_recursive.expected.format))
- (action (diff %{expected} %{actual})))
-
-(test
- (name test_recursive)
- (modules test_recursive)
- (libraries zarith data-encoding)
- (preprocess (pps ppx_pbt)))
-
-(rule
- (targets test_tree.expected.format)
- (deps (:pp pp.exe) (:input test_tree.expected.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (targets test_tree.actual)
- (deps (:pp pp.exe) (:input test_tree.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (alias runtest)
- (deps (:actual test_tree.actual) (:expected test_tree.expected.format))
- (action (diff %{expected} %{actual})))
-
-(test
- (name test_tree)
- (modules test_tree)
  (libraries zarith data-encoding)
  (preprocess (pps ppx_pbt)))
 
