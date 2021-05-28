@@ -45,11 +45,15 @@ module Gens : sig
   (** Unit generator *)
   val unit : unit QCheck.arbitrary
 
-  (** 'a option generator *)
-  val option : 'a QCheck.arbitrary -> 'a option QCheck.arbitrary
+  (** Creates expression from a generator identifier
 
-  (** 'a list generator *)
-  val list : 'a QCheck.arbitrary -> 'a list QCheck.arbitrary
+      If the string belongs to this module generators, it will create an
+      expression like:
+      from_string id -> Pbt.Gens.id
+
+      Otherwise, local_gen is required
+      from_string id -> gen_id *)
+  val from_string : ?loc:Ppxlib.location -> string -> Ppxlib.expression
 end
 
 module Properties : sig
@@ -80,8 +84,8 @@ module Properties : sig
       the right or left argument is capped. *)
   val capped : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [eq_res f oracle x y] test if the result between f and the oracle are equals *)
-  val eq_res : ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+  (** [oracle f oracle x y] test if the result between f and the oracle are equals *)
+  val oracle : ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
   (** [absorb_left f absorb x] test if the function returns x when
       the left argument is absorb. *)
@@ -109,4 +113,24 @@ module Properties : sig
 
   (** [roundtrip f g x] test if f (g x) = x *)
   val roundtrip : ('a -> 'b) -> ('b -> 'a) -> 'b -> bool
+
+  (** Creates expression from a property identifier
+
+      If the string belongs to this module properties, it will create an
+      expression like:
+      from_string id -> Pbt.Properties.id
+
+      Otherwise, local_gen is required
+      from_string id -> id *)
+  val from_string : ?loc:Ppxlib.location -> string -> Ppxlib.expression
+
+  (** Returns the number of generators needed for this module properties *)
+  val nb_of_gens : string -> int option
+
+  (** Returns the number of arguments needed for this module properties *)
+  val nb_of_args : string -> int option
+
+  (** Returns the number of generators and arguments needed for this module
+      properties *)
+  val nb_of_gens_args : string -> (int * int) option
 end

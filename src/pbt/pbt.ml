@@ -23,6 +23,8 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+open Ppxlib
+
 module Gens = struct
   let int = QCheck.int
 
@@ -38,9 +40,22 @@ module Gens = struct
 
   let unit = QCheck.unit
 
-  let option x = QCheck.option x
-
-  let list x = QCheck.list x
+  let from_string ?(loc = Location.none) = function
+    | "int" -> [%expr Pbt.Gens.int]
+    | "uint" -> [%expr Pbt.Gens.uint]
+    | "float" -> [%expr Pbt.Gens.float]
+    | "char" -> [%expr Pbt.Gens.char]
+    | "string" -> [%expr Pbt.Gens.string]
+    | "bool" -> [%expr Pbt.Gens.float]
+    | "unit" -> [%expr Pbt.Gens.float]
+    | s ->
+        let n = Printf.sprintf "gen_%s" s in
+        {
+          pexp_desc = Pexp_ident { txt = Lident n; loc };
+          pexp_loc = loc;
+          pexp_loc_stack = [];
+          pexp_attributes = [];
+        }
 end
 
 module Properties = struct
@@ -61,7 +76,7 @@ module Properties = struct
 
   let capped f cap x = capped_left f cap x && capped_right f cap x
 
-  let eq_res f oracle x y = f x y = oracle x y
+  let oracle f oracle x y = f x y = oracle x y
 
   let absorb_left f absorb x = f absorb x = absorb
 
@@ -76,4 +91,54 @@ module Properties = struct
   let floored f floor x = floored_left f floor x && floored_right f floor x
 
   let roundtrip f g x = f (g x) = x
+
+  let from_string ?(loc = Location.none) = function
+    | "commutative" -> [%expr Pbt.Properties.commutative]
+    | "associative" -> [%expr Pbt.Properties.associative]
+    | "neutral_left" -> [%expr Pbt.Properties.neutral_left]
+    | "neutral_right" -> [%expr Pbt.Properties.neutral_right]
+    | "neutrals" -> [%expr Pbt.Properties.neutrals]
+    | "capped_left" -> [%expr Pbt.Properties.capped_left]
+    | "capped_right" -> [%expr Pbt.Properties.capped_right]
+    | "capped" -> [%expr Pbt.Properties.capped]
+    | "oracle" -> [%expr Pbt.Properties.oracle]
+    | "absorb_left" -> [%expr Pbt.Properties.absorb_left]
+    | "absorb_right" -> [%expr Pbt.Properties.absorb_right]
+    | "absorbs" -> [%expr Pbt.Properties.absorbs]
+    | "floored_left" -> [%expr Pbt.Properties.floored_left]
+    | "floored_right" -> [%expr Pbt.Properties.floored_right]
+    | "floored" -> [%expr Pbt.Properties.floored]
+    | "roundtrip" -> [%expr Pbt.Properties.roundtrip]
+    | s ->
+        {
+          pexp_desc = Pexp_ident { txt = Lident s; loc };
+          pexp_loc = loc;
+          pexp_loc_stack = [];
+          pexp_attributes = [];
+        }
+
+  let nb_of_gens_args = function
+    | "commutative" -> Some (2, 0)
+    | "associative" -> Some (3, 0)
+    | "neutral_left" -> Some (1, 1)
+    | "neutral_right" -> Some (1, 1)
+    | "neutrals" -> Some (1, 1)
+    | "capped" -> Some (1, 1)
+    | "capped_left" -> Some (1, 1)
+    | "capped_right" -> Some (1, 1)
+    | "floored_left" -> Some (1, 1)
+    | "floored_right" -> Some (1, 1)
+    | "floored" -> Some (1, 1)
+    | "oracle" -> Some (2, 1)
+    | "absorb_left" -> Some (1, 1)
+    | "absorb_right" -> Some (1, 1)
+    | "absorbs" -> Some (1, 1)
+    | "roundtrip" -> Some (1, 1)
+    | _ -> None
+
+  let nb_of_gens s =
+    Option.fold ~some:(fun x -> Some (fst x)) ~none:None @@ nb_of_gens_args s
+
+  let nb_of_args s =
+    Option.fold ~some:(fun x -> Some (snd x)) ~none:None @@ nb_of_gens_args s
 end
