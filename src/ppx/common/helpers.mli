@@ -29,12 +29,20 @@ open Ppxlib
 
 val mk_loc : ?loc:location -> 'a -> 'a loc
 
-(** Information attached to a structure_item inside a record *)
-type info
+module Info : sig
+  (** Information attached to a structure_item inside a record *)
+  type t
 
-(** Info builder *)
-val create_info :
-  ?name:string -> ?payload:payload -> ?loc:location -> unit -> info
+  (** Info builder *)
+  val create_info :
+    ?name:string -> ?attr:attribute -> ?loc:location -> unit -> t
 
-(** Update name in info *)
-val update_name : string -> info -> info
+  (** Update name in info *)
+  val update_name : string -> t -> t
+
+  val get_loc : t -> location
+
+  val get_name : t -> string
+
+  val get_attribute : t -> attribute option
+end

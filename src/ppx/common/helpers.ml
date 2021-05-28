@@ -30,13 +30,21 @@ let mk_loc ?loc x =
   | None -> { txt = x; loc = Location.none }
   | Some loc -> { txt = x; loc }
 
-type info = {
-  stri_name : string;
-  stri_payload : payload option;
-  stri_loc : Location.t;
-}
+module Info = struct
+  type t = {
+    stri_name : string;
+    stri_attr : attribute option;
+    stri_loc : Location.t;
+  }
 
-let create_info ?(name = "") ?payload ?(loc = Location.none) () =
-  { stri_name = name; stri_payload = payload; stri_loc = loc }
+  let create_info ?(name = "") ?attr ?(loc = Location.none) () =
+    { stri_name = name; stri_attr = attr; stri_loc = loc }
 
-let update_name name info = { info with stri_name = name }
+  let update_name name info = { info with stri_name = name }
+
+  let get_name x = x.stri_name
+
+  let get_attribute x = x.stri_attr
+
+  let get_loc x = x.stri_loc
+end
