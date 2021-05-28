@@ -48,5 +48,9 @@ val property_unsupported : ?loc:location -> property:string -> unit -> 'a
 val property_gen_missing :
   ?loc:location -> property:string -> required:int -> actual:int -> unit -> 'a
 
+(** Error when a pbt.property misses args *)
+val property_arg_missing :
+  ?loc:location -> property:string -> required:int -> actual:int -> unit -> 'a
+
 (** Error on location with message *)
 val location_error : ?loc:location -> msg:string -> unit -> 'a

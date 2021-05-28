@@ -49,4 +49,12 @@ let property_gen_missing ?loc ~property ~required ~actual () =
     required
     actual
 
+let property_arg_missing ?loc ~property ~required ~actual () =
+  raise_errorf
+    ?loc
+    "The property %s requires %d args, %d found"
+    property
+    required
+    actual
+
 let location_error ?loc ~msg () = raise_errorf ?loc "%s" msg
