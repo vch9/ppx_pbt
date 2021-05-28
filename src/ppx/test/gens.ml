@@ -24,6 +24,8 @@
 (*****************************************************************************)
 
 open Ppxlib
+module AH = Common.Ast_helpers
+module E = AH.Expression
 
 (* Exhaustive list of builtin generators
    If the function returns None -> the generator must be provided by the user *)
@@ -57,7 +59,7 @@ let replace_gens loc gen_ids =
   let replace gen_id =
     match builtin_generators loc gen_id with
     | Some gen -> gen
-    | None -> Helpers.build_lident loc gen_id
+    | None -> E.pexp_lident ~loc gen_id
   in
   List.map replace gen_ids
 

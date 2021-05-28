@@ -1,6 +1,6 @@
 (library
  (name test)
- (libraries ppxlib menhirLib qcheck common)
+ (libraries ppxlib menhirLib qcheck common ppx_pbt.pbt)
  (preprocess (pps ppxlib.metaquot)))
 
 (ocamllex lexer)

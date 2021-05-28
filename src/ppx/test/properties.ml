@@ -25,7 +25,10 @@
 
 open Gens
 open Ppxlib
-open Error
+module Error = Common.Error
+module AH = Common.Ast_helpers
+module E = AH.Expression
+module P = AH.Pattern
 
 type property_name = string
 
@@ -102,7 +105,13 @@ let check_gens loc property_name gens =
   match builtin_properties loc property_name with
   | Some { n_gens = n; _ } ->
       let len = List.length gens in
-      if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
+      if n <> len then
+        Error.property_gen_missing
+          ~loc
+          ~property:property_name
+          ~required:n
+          ~actual:len
+          ()
   | None ->
       Printf.printf
         "Ppx_pbt (Warning): %s is your local property, can not check generators\n"
@@ -113,7 +122,13 @@ let check_args loc property_name args =
   match builtin_properties loc property_name with
   | Some { n_args = n; _ } ->
       let len = List.length args in
-      if n <> len then raise (PropertyGeneratorsMissing (property_name, n, len))
+      if n <> len then
+        Error.property_arg_missing
+          ~loc
+          ~property:property_name
+          ~required:n
+          ~actual:len
+          ()
   | None ->
       Printf.printf
         "Ppx_pbt (Warning): %s is your local property, can not check arguments\n"
@@ -154,10 +169,10 @@ let pattern_from_gens loc gens =
     | Pair (x, y) ->
         [%pat? ([%p create_pattern loc x], [%p create_pattern loc y])]
     | Double (x, y) ->
-        let arg_x = Helpers.build_pattern_var loc x in
-        let arg_y = Helpers.build_pattern_var loc y in
-        Ppat_tuple [ arg_x; arg_y ] |> Helpers.build_pattern loc
-    | Simple x -> Helpers.build_pattern_var loc x
+        let arg_x = P.ppat_var ~loc x in
+        let arg_y = P.ppat_var ~loc y in
+        Ppat_tuple [ arg_x; arg_y ] |> P.pattern ~loc
+    | Simple x -> P.ppat_var ~loc x
   in
   let args = create_assoc_args gens in
   (* Pattern is returned with the assoc between generators and the identifier
@@ -165,7 +180,7 @@ let pattern_from_gens loc gens =
   (create_pattern loc args, args)
 
 let args_to_expr loc args =
-  let f x = (Nolabel, Helpers.build_lident loc x) in
+  let f x = (Nolabel, E.pexp_lident ~loc x) in
   List.map f args
 
 (* Build the call to the property intented to be tested
@@ -176,5 +191,5 @@ let call_property loc fun_name (name, args, gens) =
     fun_name :: args @ Gens.nested_pairs_to_list gens |> args_to_expr loc
   in
   match builtin_properties loc name with
-  | Some { expr = fun_expr; _ } -> Helpers.build_apply loc fun_expr args
-  | None -> Helpers.build_apply loc (Helpers.build_lident loc name) args
+  | Some { expr = fun_expr; _ } -> E.pexp_apply ~loc ~f:fun_expr ~args ()
+  | None -> E.pexp_apply ~loc ~f:(E.pexp_lident ~loc name) ~args ()

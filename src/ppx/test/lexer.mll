@@ -26,7 +26,7 @@
 
 {
   open Parser
-  open Error
+  open Common.Error
 }
 
 
@@ -50,4 +50,4 @@ rule token = parse
 
 | eof { EOF }
 
-| _ as c { syntax_error c }
+| _* as s { syntax_error ~err:s () }
