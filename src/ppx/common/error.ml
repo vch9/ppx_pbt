@@ -25,30 +25,28 @@
 
 open Ppxlib
 
-exception InternalError
+let default_loc = ref Location.none
 
-exception SyntaxError of string
+let set_loc x = default_loc := x
 
-exception CaseUnsupported of string
+let raise_errorf ?(loc = !default_loc) = Ppxlib__Location.raise_errorf ~loc
 
-exception PropertyNotSupported of string
+let internal_error ?loc () = raise_errorf ?loc "%s" "Internal error"
 
-exception PropertyGeneratorsMissing of string * int * int
+let syntax_error ?loc ~err () = raise_errorf ?loc "Syntax error : %s" err
 
-exception LocError of location * string
+let case_unsupported ?loc ~case () =
+  raise_errorf ?loc "This case is not supported yet : %s" case
 
-let syntax_error c = raise (SyntaxError (Format.sprintf "%c" c))
+let property_unsupported ?loc ~property () =
+  raise_errorf ?loc "The property %s is not supported in ppx_pbt" property
 
-let print_exception = function
-  | SyntaxError s -> Format.printf "SyntaxError (%s)\n" s
-  | CaseUnsupported s -> Format.printf "CaseUnsupported in (%s)\n" s
-  | PropertyNotSupported s ->
-      Format.printf "The property %s is not supported in ppx_pbt\n" s
-  | PropertyGeneratorsMissing (s, actual, expected) ->
-      Format.printf
-        "Property %s requires %d generators, here %d are applied\n"
-        s
-        actual
-        expected
-  | LocError (loc, s) -> Ppxlib__Location.raise_errorf ~loc "%s" s
-  | e -> Format.printf "InternalError (%s)\n" (Printexc.to_string e)
+let property_gen_missing ?loc ~property ~required ~actual () =
+  raise_errorf
+    ?loc
+    "The property %s requires %d gens, %d found"
+    property
+    required
+    actual
+
+let location_error ?loc ~msg () = raise_errorf ?loc "%s" msg

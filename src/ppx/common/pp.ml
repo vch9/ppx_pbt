@@ -105,7 +105,7 @@ and core_types_to_str cts = list_to_str core_type_to_str cts
 and type_kind_to_str = function
   | Ptype_abstract -> "abstract"
   (* TODO useful to print here *)
-  | Ptype_variant constrs -> constrs_declaration_to_str constrs
+  | Ptype_variant constrs -> constr_declarations_to_str constrs
   | Ptype_record labels ->
       list_to_str ~left:"{" ~right:"}" label_declaration_to_str labels
   | Ptype_open -> "open"
@@ -118,7 +118,7 @@ and label_declaration_to_str ld =
   let ty = core_type_to_str ld.pld_type in
   Printf.sprintf "(%s %s : %s)" mut name ty
 
-and constrs_declaration_to_str cstrs =
+and constr_declarations_to_str cstrs =
   list_to_str ~sep:"\n" constr_declaration_to_str cstrs
 
 and constr_declaration_to_str cd =

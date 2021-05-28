@@ -23,41 +23,18 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Helpers functions *)
+
 open Ppxlib
-module E = Error
 
-let rec pbt_from_attribute x =
-  match x.attr_payload with
-  | PStr structure -> pbt_from_structure structure
-  | _ ->
-      E.case_unsupported
-        ~loc:x.attr_loc
-        ~case:"Common.Attribute.pbt_from_payload"
-        ()
+val mk_loc : ?loc:location -> 'a -> 'a loc
 
-and pbt_from_structure_item stri =
-  match stri.pstr_desc with
-  | Pstr_eval (expr, _) -> pbt_from_expression expr
-  | _ ->
-      E.case_unsupported
-        ~loc:stri.pstr_loc
-        ~case:"Common.Attribute.pbt_from_structure_item"
-        ()
+(** Information attached to a structure_item inside a record *)
+type info
 
-and pbt_from_structure structure =
-  (* TODO: This function should be property based tested,
-     forall structure : List.length (pbt_from_structure structure) = 1 *)
-  List.map pbt_from_structure_item structure |> List.hd
+(** Info builder *)
+val create_info :
+  ?name:string -> ?payload:payload -> ?loc:location -> unit -> info
 
-and pbt_from_expression expression =
-  match expression.pexp_desc with
-  | Pexp_constant constant -> pbt_from_constant constant
-  | _ ->
-      E.case_unsupported
-        ~loc:expression.pexp_loc
-        ~case:"Common.Attribute.pbt_from_expression"
-        ()
-
-and pbt_from_constant = function
-  | Pconst_string (str, _, _) -> str
-  | _ -> E.case_unsupported ~case:"Common.Attribute.pbt_from_constant" ()
+(** Update name in info *)
+val update_name : string -> info -> info

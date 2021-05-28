@@ -22,42 +22,66 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
-
 open Ppxlib
-module E = Error
 
-let rec pbt_from_attribute x =
-  match x.attr_payload with
-  | PStr structure -> pbt_from_structure structure
-  | _ ->
-      E.case_unsupported
-        ~loc:x.attr_loc
-        ~case:"Common.Attribute.pbt_from_payload"
-        ()
+(** Module to provide pretty-printer and to_str function for Ppxlib.Ast types *)
 
-and pbt_from_structure_item stri =
-  match stri.pstr_desc with
-  | Pstr_eval (expr, _) -> pbt_from_expression expr
-  | _ ->
-      E.case_unsupported
-        ~loc:stri.pstr_loc
-        ~case:"Common.Attribute.pbt_from_structure_item"
-        ()
+(** Type_declaration to string *)
+val type_decl_to_str : type_declaration -> string
 
-and pbt_from_structure structure =
-  (* TODO: This function should be property based tested,
-     forall structure : List.length (pbt_from_structure structure) = 1 *)
-  List.map pbt_from_structure_item structure |> List.hd
+(** Cstr to string *)
+val type_cstr_to_str : core_type * core_type * location -> string
 
-and pbt_from_expression expression =
-  match expression.pexp_desc with
-  | Pexp_constant constant -> pbt_from_constant constant
-  | _ ->
-      E.case_unsupported
-        ~loc:expression.pexp_loc
-        ~case:"Common.Attribute.pbt_from_expression"
-        ()
+(** Cstrs to string *)
+val type_cstrs_to_str : (core_type * core_type * location) list -> string
 
-and pbt_from_constant = function
-  | Pconst_string (str, _, _) -> str
-  | _ -> E.case_unsupported ~case:"Common.Attribute.pbt_from_constant" ()
+(** Param to string *)
+val type_param_to_str : core_type * (variance * injectivity) -> string
+
+(** Params to string *)
+val type_params_to_str : (core_type * (variance * injectivity)) list -> string
+
+(** Variance to string *)
+val variance_to_str : variance -> string
+
+(** Injectivity_to_str to string*)
+val injectivity_to_str : injectivity -> string
+
+(** Core_type to string *)
+val core_type_to_str : core_type -> string
+
+(** Core_types to string *)
+val core_types_to_str : core_type list -> string
+
+(** Type kind to string *)
+val type_kind_to_str : type_kind -> string
+
+(** Label_declaration to string *)
+val label_declaration_to_str : label_declaration -> string
+
+(** Constructor declaration to string *)
+val constr_declaration_to_str : constructor_declaration -> string
+
+(** Constructor declarations to string *)
+val constr_declarations_to_str : constructor_declaration list -> string
+
+(** Constructor argument *)
+val constr_args_to_str : constructor_arguments -> string
+
+(** Attribute to string *)
+val attribute_to_str : attribute -> string
+
+(** Attributes to string *)
+val attributes_to_str : attributes -> string
+
+(** Manifest to string *)
+val manifest_to_str : core_type option -> string
+
+(** Longident to string *)
+val longident_to_str : longident -> string
+
+(** Private flag to string *)
+val private_to_str : private_flag -> string
+
+(** Print type_declaration *)
+val print_type_decl : type_declaration -> unit

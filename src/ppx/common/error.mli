@@ -23,41 +23,30 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Error management *)
 open Ppxlib
-module E = Error
 
-let rec pbt_from_attribute x =
-  match x.attr_payload with
-  | PStr structure -> pbt_from_structure structure
-  | _ ->
-      E.case_unsupported
-        ~loc:x.attr_loc
-        ~case:"Common.Attribute.pbt_from_payload"
-        ()
+(** Default location *)
+val default_loc : location ref
 
-and pbt_from_structure_item stri =
-  match stri.pstr_desc with
-  | Pstr_eval (expr, _) -> pbt_from_expression expr
-  | _ ->
-      E.case_unsupported
-        ~loc:stri.pstr_loc
-        ~case:"Common.Attribute.pbt_from_structure_item"
-        ()
+(** Set default location *)
+val set_loc : location -> unit
 
-and pbt_from_structure structure =
-  (* TODO: This function should be property based tested,
-     forall structure : List.length (pbt_from_structure structure) = 1 *)
-  List.map pbt_from_structure_item structure |> List.hd
+(** Internal error without message *)
+val internal_error : ?loc:location -> unit -> 'a
 
-and pbt_from_expression expression =
-  match expression.pexp_desc with
-  | Pexp_constant constant -> pbt_from_constant constant
-  | _ ->
-      E.case_unsupported
-        ~loc:expression.pexp_loc
-        ~case:"Common.Attribute.pbt_from_expression"
-        ()
+(** Syntax error on parsing *)
+val syntax_error : ?loc:location -> err:string -> unit -> 'a
 
-and pbt_from_constant = function
-  | Pconst_string (str, _, _) -> str
-  | _ -> E.case_unsupported ~case:"Common.Attribute.pbt_from_constant" ()
+(** Internal error when a pattern matching case is not supported *)
+val case_unsupported : ?loc:location -> case:string -> unit -> 'a
+
+(** Error when a pbt.property is not supported *)
+val property_unsupported : ?loc:location -> property:string -> unit -> 'a
+
+(** Error when a pbt.property misses generators *)
+val property_gen_missing :
+  ?loc:location -> property:string -> required:int -> actual:int -> unit -> 'a
+
+(** Error on location with message *)
+val location_error : ?loc:location -> msg:string -> unit -> 'a

@@ -24,40 +24,8 @@
 (*****************************************************************************)
 
 open Ppxlib
-module E = Error
 
-let rec pbt_from_attribute x =
-  match x.attr_payload with
-  | PStr structure -> pbt_from_structure structure
-  | _ ->
-      E.case_unsupported
-        ~loc:x.attr_loc
-        ~case:"Common.Attribute.pbt_from_payload"
-        ()
+(** Module extracting informations from attributes *)
 
-and pbt_from_structure_item stri =
-  match stri.pstr_desc with
-  | Pstr_eval (expr, _) -> pbt_from_expression expr
-  | _ ->
-      E.case_unsupported
-        ~loc:stri.pstr_loc
-        ~case:"Common.Attribute.pbt_from_structure_item"
-        ()
-
-and pbt_from_structure structure =
-  (* TODO: This function should be property based tested,
-     forall structure : List.length (pbt_from_structure structure) = 1 *)
-  List.map pbt_from_structure_item structure |> List.hd
-
-and pbt_from_expression expression =
-  match expression.pexp_desc with
-  | Pexp_constant constant -> pbt_from_constant constant
-  | _ ->
-      E.case_unsupported
-        ~loc:expression.pexp_loc
-        ~case:"Common.Attribute.pbt_from_expression"
-        ()
-
-and pbt_from_constant = function
-  | Pconst_string (str, _, _) -> str
-  | _ -> E.case_unsupported ~case:"Common.Attribute.pbt_from_constant" ()
+(** Extract properties as string from the attribute *)
+val pbt_from_attribute : attribute -> string
