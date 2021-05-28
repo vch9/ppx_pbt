@@ -62,22 +62,43 @@ let build_nested_gens loc gens =
    len_cstr_args (Leaf)                => 0 *)
 let len_cstr_args = function
   | Pcstr_tuple xs -> List.length xs
-  | Pcstr_record _ -> raise (CaseUnsupported "len_cstr_args")
+  | Pcstr_record xs -> List.length xs
 
 (* Helper function to check if the type is recursive *)
 let rec is_recursive type_name = function
   | Ptype_variant cstrs ->
       List.exists (is_recursive_constructor_decl type_name) cstrs
+  | Ptype_record xs -> is_recursive_label_declarations type_name xs
   | _ -> raise (CaseUnsupported "is_recursive")
 
 and is_recursive_constructor_decl type_name cd =
   match cd.pcd_args with
   | Pcstr_tuple cts -> List.exists (is_recursive_core_type type_name) cts
-  | Pcstr_record _ -> raise (CaseUnsupported "is_recursive_contructor_decl")
+  | Pcstr_record xs -> is_recursive_label_declarations type_name xs
+
+and is_recursive_label_declarations type_name xs =
+  let labels =
+    List.filter_map
+      (fun x ->
+        let loc = x.pld_type.ptyp_loc in
+        match x.pld_type.ptyp_desc with
+        | Ptyp_var s -> if s = type_name then Some loc else None
+        | Ptyp_constr (lg, _) ->
+            let s = Pp.longident_to_str lg.txt in
+            if s = type_name then Some loc else None
+        | _ -> None)
+      xs
+  in
+  match labels with
+  | [] -> false
+  | loc :: _ ->
+      raise (LocError (loc, "ppx_pbt does not supports recursive record"))
 
 and is_recursive_core_type type_name ct =
   match ct.ptyp_desc with
-  | Ptyp_constr ({ txt = lg; _ }, _) -> Pp.longident_to_str lg = type_name
+  | Ptyp_constr ({ txt = lg; _ }, cts) ->
+      Pp.longident_to_str lg = type_name
+      || List.exists (is_recursive_core_type type_name) cts
   | _ -> false
 
 (* ------------------------------------------------ *)
@@ -189,7 +210,33 @@ and create_gen_from_kind ~loc type_name kind =
           |> Helpers.build_list loc
         in
         [%expr QCheck.oneof [%e gens]]
+  | Ptype_record label_decls ->
+      let _ = is_recursive type_name kind in
+      (* If is_recursive returns true, the programs raises an exception *)
+      let (pat, gens, body) = create_record ~loc label_decls in
+      [%expr QCheck.map (fun [%p pat] -> [%e body]) [%e gens]]
   | _ -> raise (CaseUnsupported "create_gen_from_kind")
+
+(* Helper function to build a record
+
+   returns (pat, record, gens) *)
+and create_record ~loc label_decls =
+  let gens =
+    List.map (fun x -> create_gen_from_core_type ~loc x.pld_type) label_decls
+  in
+  let (gens, gens_name, pat) = build_nested_gens loc gens in
+
+  let body_record =
+    List.map2
+      (fun x gen ->
+        let name = x.pld_name.txt in
+        (Helpers.build_longident loc (Lident name), Helpers.build_lident loc gen))
+      label_decls
+      gens_name
+  in
+  let body = Helpers.build_expression loc @@ Pexp_record (body_record, None) in
+
+  (pat, gens, body)
 
 and create_from_kind_rec _kind =
   (* TODO *)
@@ -290,23 +337,26 @@ and create_gen_from_cd_without_args ~loc cd =
   [%expr QCheck.make @@ QCheck.Gen.return [%e k]]
 
 and create_gen_from_cd_with_args ~loc cd =
-  let (gens, gens_name, pat) =
-    build_nested_gens loc @@ create_gen_from_cstr_args ~loc cd.pcd_args
-  in
-
   let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
 
-  let k_args =
-    List.map (Helpers.build_lident loc) gens_name |> Helpers.build_tuple loc
-  in
+  match cd.pcd_args with
+  | Pcstr_tuple cts ->
+      let (gens, gens_name, pat) =
+        build_nested_gens loc @@ List.map (create_gen_from_core_type ~loc) cts
+      in
 
-  let build = Helpers.build_construct loc k_name (Some k_args) in
+      let k_args =
+        List.map (Helpers.build_lident loc) gens_name |> Helpers.build_tuple loc
+      in
 
-  [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
+      let build = Helpers.build_construct loc k_name (Some k_args) in
 
-and create_gen_from_cstr_args ~loc = function
-  | Pcstr_tuple cts -> List.map (create_gen_from_core_type ~loc) cts
-  | _ -> raise (CaseUnsupported "create_gen_from_cstr_arg")
+      [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
+  | Pcstr_record xs ->
+      let (pat, gens, record) = create_record ~loc xs in
+      let build = Helpers.build_construct loc k_name (Some record) in
+
+      [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
 and create_gen_from_string ~loc s =
   match Gens.builtin_generators loc s with
