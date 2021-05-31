@@ -36,7 +36,7 @@ val set_loc : location -> unit
 val internal_error : ?loc:location -> unit -> 'a
 
 (** Syntax error on parsing *)
-val syntax_error : ?loc:location -> err:string -> unit -> 'a
+val syntax_error : ?loc:location -> err:char -> unit -> 'a
 
 (** Internal error when a pattern matching case is not supported *)
 val case_unsupported : ?loc:location -> case:string -> unit -> 'a

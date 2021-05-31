@@ -33,7 +33,7 @@ let raise_errorf ?(loc = !default_loc) = Ppxlib__Location.raise_errorf ~loc
 
 let internal_error ?loc () = raise_errorf ?loc "%s" "Internal error"
 
-let syntax_error ?loc ~err () = raise_errorf ?loc "Syntax error : %s" err
+let syntax_error ?loc ~err () = raise_errorf ?loc "Syntax error : %c" err
 
 let case_unsupported ?loc ~case () =
   raise_errorf ?loc "This case is not supported yet : %s" case

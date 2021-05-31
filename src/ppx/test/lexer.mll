@@ -50,4 +50,4 @@ rule token = parse
 
 | eof { EOF }
 
-| _* as s { syntax_error ~err:s () }
+| _ as c { syntax_error ~err:c () }
