@@ -23,63 +23,31 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Modules handling generators *)
 open Ppxlib
-module AH = Common.Ast_helpers
-module E = AH.Expression
 
-let replace_gens loc gen_ids = List.map (Pbt.Gens.from_string ~loc) gen_ids
-
-(* Split a list in two list of size (length list) / 2
-
-   example:
-   split_even_list [1; 2; 3; 4] => [1; 2] [3; 4]
-
-   The reason we split only even list is because separated list are meant
-   to be nested into pairs.
-   A odd list would be translated to something like:
-   [x; y; z] => (pair x (pair y z))
-   In our case, the split is only applied on [y;z] *)
-let split_even_list list =
-  let n = List.length list in
-  assert (n mod 2 = 0) ;
-  let middle = n / 2 in
-  let i = ref 0 in
-  List.partition
-    (fun _ ->
-      i := !i + 1 ;
-      !i <= middle)
-    list
+(** Takes generators with their names and replace them with expression
+    using [Pbt.Properties.from_string] *)
+val replace_gens : location -> string list -> expression list
 
 type 'a nested_pairs =
   | Pair of 'a nested_pairs * 'a nested_pairs
   | Double of 'a * 'a
   | Simple of 'a
 
-let rec nest_generators gens =
-  match gens with
-  | [] ->
-      let loc = Location.none in
-      Simple [%expr Pbt.Gens.unit]
-  | [ x ] -> Simple x
-  | [ x; y ] -> Double (x, y)
-  | gens when List.length gens mod 2 = 0 ->
-      let (l1, l2) = split_even_list gens in
-      Pair (nest_generators l1, nest_generators l2)
-  | x :: xs -> Pair (Simple x, nest_generators xs)
+(** Takes a list of expression and nest them into pairs, in order
+    to be used with [QCheck.pair] combinator 
 
-let rec nested_pairs_to_expr loc = function
-  | Simple expr -> expr
-  | Pair (x, y) ->
-      [%expr
-        QCheck.pair
-          [%e nested_pairs_to_expr loc x]
-          [%e nested_pairs_to_expr loc y]]
-  | Double (x, y) -> [%expr QCheck.pair [%e x] [%e y]]
+    example:
+   nest_generators [a] => a
+   nest_generators [a;b] => Double a b
+   nest_generators [a;b;c] => Pair (Simple a) (Double b c)
+   nest_generators [a;b;c;d] => Pair (Double a b) (Double c d) *)
+val nest_generators : expression list -> expression nested_pairs
 
-let rec nested_pairs_to_list = function
-  | Simple x -> [ x ]
-  | Double (x, y) -> [ x; y ]
-  | Pair (x, y) ->
-      let left = nested_pairs_to_list x in
-      let right = nested_pairs_to_list y in
-      left @ right
+(** Transforms nested pairs of expressions into an expression using
+    [QCheck.pair combinator] *)
+val nested_pairs_to_expr : location -> expression nested_pairs -> expression
+
+(** Transforms nested pairs of 'a into a list of 'a, roundtrip with [nest_generators] *)
+val nested_pairs_to_list : 'a nested_pairs -> 'a list

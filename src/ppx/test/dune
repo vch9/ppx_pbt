@@ -1,5 +1,6 @@
 (library
  (name test)
+ (public_name ppx_pbt.ppx_pbt.test)
  (libraries ppxlib menhirLib qcheck common ppx_pbt.pbt)
  (preprocess (pps ppxlib.metaquot)))
 

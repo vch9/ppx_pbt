@@ -23,63 +23,46 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Module representing the properties as payload *)
+
 open Ppxlib
-module AH = Common.Ast_helpers
-module E = AH.Expression
 
-let replace_gens loc gen_ids = List.map (Pbt.Gens.from_string ~loc) gen_ids
+(** Type representing properties *)
 
-(* Split a list in two list of size (length list) / 2
+type property_name = string
 
-   example:
-   split_even_list [1; 2; 3; 4] => [1; 2] [3; 4]
+type arg = string
 
-   The reason we split only even list is because separated list are meant
-   to be nested into pairs.
-   A odd list would be translated to something like:
-   [x; y; z] => (pair x (pair y z))
-   In our case, the split is only applied on [y;z] *)
-let split_even_list list =
-  let n = List.length list in
-  assert (n mod 2 = 0) ;
-  let middle = n / 2 in
-  let i = ref 0 in
-  List.partition
-    (fun _ ->
-      i := !i + 1 ;
-      !i <= middle)
-    list
+type gen = string
 
-type 'a nested_pairs =
-  | Pair of 'a nested_pairs * 'a nested_pairs
-  | Double of 'a * 'a
-  | Simple of 'a
+type property = property_name * arg list * gen list
 
-let rec nest_generators gens =
-  match gens with
-  | [] ->
-      let loc = Location.none in
-      Simple [%expr Pbt.Gens.unit]
-  | [ x ] -> Simple x
-  | [ x; y ] -> Double (x, y)
-  | gens when List.length gens mod 2 = 0 ->
-      let (l1, l2) = split_even_list gens in
-      Pair (nest_generators l1, nest_generators l2)
-  | x :: xs -> Pair (Simple x, nest_generators xs)
+type properties = property list
 
-let rec nested_pairs_to_expr loc = function
-  | Simple expr -> expr
-  | Pair (x, y) ->
-      [%expr
-        QCheck.pair
-          [%e nested_pairs_to_expr loc x]
-          [%e nested_pairs_to_expr loc y]]
-  | Double (x, y) -> [%expr QCheck.pair [%e x] [%e y]]
+and t = properties
 
-let rec nested_pairs_to_list = function
-  | Simple x -> [ x ]
-  | Double (x, y) -> [ x; y ]
-  | Pair (x, y) ->
-      let left = nested_pairs_to_list x in
-      let right = nested_pairs_to_list y in
-      left @ right
+(** Checks gens check if the number of given generator is equals to the expected
+    number of generators.
+    Raise an exception if expected and actual are different *)
+val check_gens : location -> string -> 'a list -> unit
+
+(** Checks args check if the number of given arguments is equals to the expected
+    number of arguments.
+    Raise an exception if expected and actual are different *)
+val check_args : location -> string -> 'a list -> unit
+
+(** Associate a unique name to the nested generators *)
+val names_from_gens : 'a Gens.nested_pairs -> string Gens.nested_pairs
+
+(** Create a pattern from the nested generators names,
+    it also returns the generators from [names_from_gens] in order
+    to be used afterward *)
+val pattern_from_gens :
+  location -> 'a Gens.nested_pairs -> pattern * string Gens.nested_pairs
+
+(** Create an expression from the property *)
+val call_property :
+  location ->
+  string ->
+  string * string list * string Gens.nested_pairs ->
+  expression

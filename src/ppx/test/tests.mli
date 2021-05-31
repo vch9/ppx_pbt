@@ -23,63 +23,52 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Module entry point, expand structure_item with tests *)
 open Ppxlib
-module AH = Common.Ast_helpers
-module E = AH.Expression
 
-let replace_gens loc gen_ids = List.map (Pbt.Gens.from_string ~loc) gen_ids
+(** Parse a string into a Properties.t, using Menhir *)
+val from_string : string -> Properties.t
 
-(* Split a list in two list of size (length list) / 2
+(** Create tests using [property_to_test] on every property *)
+val properties_to_test :
+  loc:location -> name:string -> Properties.t -> structure_item list
 
-   example:
-   split_even_list [1; 2; 3; 4] => [1; 2] [3; 4]
+(** Create the test based on the property, also returns the name of the test
+    in order to be added to the test suite *)
+val property_to_test :
+  loc:location -> name:string -> Properties.property -> structure_item * string
 
-   The reason we split only even list is because separated list are meant
-   to be nested into pairs.
-   A odd list would be translated to something like:
-   [x; y; z] => (pair x (pair y z))
-   In our case, the split is only applied on [y;z] *)
-let split_even_list list =
-  let n = List.length list in
-  assert (n mod 2 = 0) ;
-  let middle = n / 2 in
-  let i = ref 0 in
-  List.partition
-    (fun _ ->
-      i := !i + 1 ;
-      !i <= middle)
-    list
+(** Extract generators from generators identifiers, also check if the number
+    of generator is correct only if the property is known to our program *)
+val gens_to_test :
+  loc:location ->
+  Properties.property_name ->
+  Properties.gen list ->
+  expression * expression Gens.nested_pairs
 
-type 'a nested_pairs =
-  | Pair of 'a nested_pairs * 'a nested_pairs
-  | Double of 'a * 'a
-  | Simple of 'a
+(** Create names for a test
 
-let rec nest_generators gens =
-  match gens with
-  | [] ->
-      let loc = Location.none in
-      Simple [%expr Pbt.Gens.unit]
-  | [ x ] -> Simple x
-  | [ x; y ] -> Double (x, y)
-  | gens when List.length gens mod 2 = 0 ->
-      let (l1, l2) = split_even_list gens in
-      Pair (nest_generators l1, nest_generators l2)
-  | x :: xs -> Pair (Simple x, nest_generators xs)
+    (pattern, expression, string)
 
-let rec nested_pairs_to_expr loc = function
-  | Simple expr -> expr
-  | Pair (x, y) ->
-      [%expr
-        QCheck.pair
-          [%e nested_pairs_to_expr loc x]
-          [%e nested_pairs_to_expr loc y]]
-  | Double (x, y) -> [%expr QCheck.pair [%e x] [%e y]]
+    They are later used to create QCheck tests
 
-let rec nested_pairs_to_list = function
-  | Simple x -> [ x ]
-  | Double (x, y) -> [ x; y ]
-  | Pair (x, y) ->
-      let left = nested_pairs_to_list x in
-      let right = nested_pairs_to_list y in
-      left @ right
+    pattern    -> pattern representing the test name
+    expression -> expression representing the test structure item
+    string     -> name of the test as string for error messages *)
+val name_to_test :
+  loc:location ->
+  string ->
+  Properties.property_name ->
+  pattern * expression * string
+
+(** Create the boolean function used in QCheck tests *)
+val pbt_to_test :
+  loc:location ->
+  string ->
+  Properties.property_name ->
+  expression Gens.nested_pairs ->
+  Properties.arg list ->
+  expression
+
+(** Module entry point, returns tests generated from the infos *)
+val replace_pbt : Common.Helpers.Info.t list -> structure_item list

@@ -36,39 +36,39 @@ module P = AH.Pattern
 module Info = Common.Helpers.Info
 module Payload = Common.Payload
 
-let get_tested_fun_pattern pattern =
-  match pattern.ppat_desc with
-  | Ppat_var { txt = str; _ } -> Some str
-  | _ -> None
-
-(* Extract fun name we want to test *)
-let rec get_tested_fun_values_binding values_bindings =
-  (* A structured item should contains only one pbt attribute *)
-  List.map get_tested_fun_value_binding values_bindings |> List.hd
-
-and get_tested_fun_expression_desc expr_desc =
-  match expr_desc with
-  | Pexp_let (_, values_binding, _) ->
-      get_tested_fun_values_binding values_binding
-  | Pexp_ident longident_loc -> get_tested_fun_longident_loc longident_loc
-  | _ ->
-      Error.case_unsupported
-        ~case:"Test.tests.get_tested_fun_expression_desc"
-        ()
-
-and get_tested_fun_value_binding value_binding =
-  match get_tested_fun_pattern value_binding.pvb_pat with
-  (* In case of let f <pattern> = <expr>, the function name is located inside
-     the value_binding.pattern *)
-  | Some str -> str
-  (* Otherwise, we look for the function name in the expression *)
-  | None -> get_tested_fun_expression_desc value_binding.pvb_expr.pexp_desc
-
-and get_tested_fun_longident_loc longident_loc =
-  match longident_loc.txt with
-  | Ldot (_, str) -> str
-  | _ ->
-      Error.case_unsupported ~case:"Test.tests.get_tested_fun_longident_loc" ()
+(* let get_tested_fun_pattern pattern =
+ *   match pattern.ppat_desc with
+ *   | Ppat_var { txt = str; _ } -> Some str
+ *   | _ -> None
+ * 
+ * (\* Extract fun name we want to test *\)
+ * let rec get_tested_fun_values_binding values_bindings =
+ *   (\* A structured item should contains only one pbt attribute *\)
+ *   List.map get_tested_fun_value_binding values_bindings |> List.hd
+ * 
+ * and get_tested_fun_expression_desc expr_desc =
+ *   match expr_desc with
+ *   | Pexp_let (_, values_binding, _) ->
+ *       get_tested_fun_values_binding values_binding
+ *   | Pexp_ident longident_loc -> get_tested_fun_longident_loc longident_loc
+ *   | _ ->
+ *       Error.case_unsupported
+ *         ~case:"Test.tests.get_tested_fun_expression_desc"
+ *         ()
+ * 
+ * and get_tested_fun_value_binding value_binding =
+ *   match get_tested_fun_pattern value_binding.pvb_pat with
+ *   (\* In case of let f <pattern> = <expr>, the function name is located inside
+ *      the value_binding.pattern *\)
+ *   | Some str -> str
+ *   (\* Otherwise, we look for the function name in the expression *\)
+ *   | None -> get_tested_fun_expression_desc value_binding.pvb_expr.pexp_desc
+ * 
+ * and get_tested_fun_longident_loc longident_loc =
+ *   match longident_loc.txt with
+ *   | Ldot (_, str) -> str
+ *   | _ ->
+ *       Error.case_unsupported ~case:"Test.tests.get_tested_fun_longident_loc" () *)
 
 (* Replace Properties.t into list of structure item *)
 let rec properties_to_test ~loc ~name properties =
