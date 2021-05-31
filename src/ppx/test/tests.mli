@@ -44,7 +44,7 @@ val gens_to_test :
   loc:location ->
   Properties.property_name ->
   Properties.gen list ->
-  expression * expression Gens.nested_pairs
+  expression * expression Common.Helpers.Pairs.nested_pairs
 
 (** Create names for a test
 
@@ -66,7 +66,7 @@ val pbt_to_test :
   loc:location ->
   string ->
   Properties.property_name ->
-  expression Gens.nested_pairs ->
+  expression Common.Helpers.Pairs.nested_pairs ->
   Properties.arg list ->
   expression
 

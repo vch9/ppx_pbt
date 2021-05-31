@@ -35,6 +35,7 @@ module E = AH.Expression
 module P = AH.Pattern
 module Info = Common.Helpers.Info
 module Payload = Common.Payload
+module Pairs = Common.Helpers.Pairs
 
 (* Replace Properties.t into list of structure item *)
 let rec properties_to_test ~loc ~name properties =
@@ -58,11 +59,10 @@ and property_to_test ~loc ~name (property, args, gens) =
   (test, test_name)
 
 and gens_to_test ~loc property gens =
-  let open Gens in
   let _ = Properties.check_gens loc property gens in
-  let gens = replace_gens loc gens in
-  let gens = nest_generators gens in
-  let expr_gens = nested_pairs_to_expr loc gens in
+  let gens = Gens.replace_gens loc gens in
+  let gens = Pairs.nest_generators gens in
+  let expr_gens = Pairs.nested_pairs_to_expr loc gens in
   (expr_gens, gens)
 
 and name_to_test ~loc name property =

@@ -23,8 +23,8 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-open Gens
 open Ppxlib
+open Common.Helpers.Pairs
 module Error = Common.Error
 module AH = Common.Ast_helpers
 module E = AH.Expression
@@ -107,8 +107,6 @@ let args_to_expr loc args =
   List.map f args
 
 let call_property loc fun_name (name, args, gens) =
-  let args =
-    fun_name :: args @ Gens.nested_pairs_to_list gens |> args_to_expr loc
-  in
+  let args = fun_name :: args @ nested_pairs_to_list gens |> args_to_expr loc in
   let f = Pbt.Properties.from_string ~loc name in
   E.pexp_apply ~loc ~f ~args ()

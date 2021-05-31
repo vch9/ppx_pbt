@@ -46,3 +46,27 @@ module Info : sig
 
   val get_attribute : t -> attribute option
 end
+
+module Pairs : sig
+  type 'a nested_pairs =
+    | Pair of 'a nested_pairs * 'a nested_pairs
+    | Double of 'a * 'a
+    | Simple of 'a
+
+  (** Takes a list of expression and nest them into pairs, in order
+    to be used with [QCheck.pair] combinator 
+
+    example:
+   nest_generators [a] => a
+   nest_generators [a;b] => Double a b
+   nest_generators [a;b;c] => Pair (Simple a) (Double b c)
+   nest_generators [a;b;c;d] => Pair (Double a b) (Double c d) *)
+  val nest_generators : expression list -> expression nested_pairs
+
+  (** Transforms nested pairs of expressions into an expression using
+    [QCheck.pair combinator] *)
+  val nested_pairs_to_expr : location -> expression nested_pairs -> expression
+
+  (** Transforms nested pairs of 'a into a list of 'a, roundtrip with [nest_generators] *)
+  val nested_pairs_to_list : 'a nested_pairs -> 'a list
+end
