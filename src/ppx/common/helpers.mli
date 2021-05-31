@@ -69,4 +69,13 @@ module Pairs : sig
 
   (** Transforms nested pairs of 'a into a list of 'a, roundtrip with [nest_generators] *)
   val nested_pairs_to_list : 'a nested_pairs -> 'a list
+
+  (** Associate a unique name to the nested generators *)
+  val names_from_gens : 'a nested_pairs -> string nested_pairs
+
+  (** Create a pattern from the nested generators names,
+    it also returns the generators from [names_from_gens] in order
+    to be used afterward *)
+  val pattern_from_gens :
+    location -> 'a nested_pairs -> pattern * string nested_pairs
 end

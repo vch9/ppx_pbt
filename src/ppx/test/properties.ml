@@ -67,41 +67,6 @@ let check_gens loc property_name gens = check_help loc property_name gens `Gens
 
 let check_args loc property_name args = check_help loc property_name args `Args
 
-let names_from_gens gens =
-  let id = ref 0 in
-  let create_fresh_name i =
-    let x = !i in
-    i := !i + 1 ;
-    "gen_" ^ string_of_int x
-  in
-  (* Replace_by_id replace the generators pattern by identifiers refering to the
-     function pattern *)
-  let rec replace_by_id = function
-    | Pair (x, y) ->
-        let x = replace_by_id x in
-        let y = replace_by_id y in
-        Pair (x, y)
-    | Double _ ->
-        let x = create_fresh_name id in
-        let y = create_fresh_name id in
-        Double (x, y)
-    | Simple _ -> Simple (create_fresh_name id)
-  in
-  replace_by_id gens
-
-let pattern_from_gens loc gens =
-  let rec create_pattern loc = function
-    | Pair (x, y) ->
-        [%pat? ([%p create_pattern loc x], [%p create_pattern loc y])]
-    | Double (x, y) ->
-        let arg_x = P.ppat_var ~loc x in
-        let arg_y = P.ppat_var ~loc y in
-        Ppat_tuple [ arg_x; arg_y ] |> P.pattern ~loc
-    | Simple x -> P.ppat_var ~loc x
-  in
-  let args = names_from_gens gens in
-  (create_pattern loc args, args)
-
 let args_to_expr loc args =
   let f x = (Nolabel, E.pexp_lident ~loc x) in
   List.map f args

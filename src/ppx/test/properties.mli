@@ -52,15 +52,6 @@ val check_gens : location -> string -> 'a list -> unit
     Raise an exception if expected and actual are different *)
 val check_args : location -> string -> 'a list -> unit
 
-(** Associate a unique name to the nested generators *)
-val names_from_gens : 'a nested_pairs -> string nested_pairs
-
-(** Create a pattern from the nested generators names,
-    it also returns the generators from [names_from_gens] in order
-    to be used afterward *)
-val pattern_from_gens :
-  location -> 'a nested_pairs -> pattern * string nested_pairs
-
 (** Create an expression from the property *)
 val call_property :
   location -> string -> string * string list * string nested_pairs -> expression
