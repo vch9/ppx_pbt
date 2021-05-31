@@ -46,9 +46,9 @@ let check_help loc ppty xs ty =
   let (required, msg, f) =
     match ty with
     | `Args ->
-        (Pbt.Properties.nb_of_gens ppty, "arguments", Error.property_arg_missing)
+        (Pbt.Properties.nb_of_args ppty, "arguments", Error.property_arg_missing)
     | `Gens ->
-        ( Pbt.Properties.nb_of_args ppty,
+        ( Pbt.Properties.nb_of_gens ppty,
           "generators",
           Error.property_gen_missing )
   in
