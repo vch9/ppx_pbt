@@ -24,7 +24,9 @@
 (*****************************************************************************)
 
 open Ppxlib
-open Error
+module Error = Common.Error
+module Helpers = Common.Helpers
+module AH = Common.Ast_helpers
 
 (*------ Find attributes in Ast.structure_item ------*)
 
@@ -37,8 +39,7 @@ let ignore = ref false
 let filter_attributes expected xs =
   let open Helpers in
   List.filter (fun attr -> attr.attr_name.txt = expected) xs
-  |> List.map (fun attr ->
-         create_info ~payload:attr.attr_payload ~loc:attr.attr_loc ())
+  |> List.map (fun attr -> Info.create_info ~attr ~loc:attr.attr_loc ())
 
 let get_attributes stri =
   match stri.pstr_desc with
@@ -52,7 +53,7 @@ let get_attributes stri =
 let extract_name_from_pat pat =
   match pat.ppat_desc with
   | Ppat_var { txt = name; _ } -> name
-  | _ -> raise (CaseUnsupported "Function name can not be extracted")
+  | _ -> Error.case_unsupported ~case:"Ppx.ppx_pbt.extract_name_from_pat" ()
 
 class mapper =
   object (_self)
@@ -72,20 +73,21 @@ class mapper =
         | [%stri let [%p? f] = [%e? _body]] when n_pbt > 0 ->
             let infos =
               let name = extract_name_from_pat f in
-              List.map (Helpers.update_name name) infos_pbt
+              List.map (Helpers.Info.update_name name) infos_pbt
             in
-            Helpers.build_include loc (stri :: Tests.replace_pbt infos)
+            AH.Structure.pexp_include
+              ~loc
+              (stri :: Test.Tests.replace_pbt infos)
         (* type t = .. *)
         | { pstr_desc = Pstr_type _; _ } when n_gen > 0 ->
-            Helpers.build_include loc [ stri; Gen.replace_stri infos_gen stri ]
+            AH.Structure.pexp_include
+              ~loc
+              [ stri; Gen.replace_stri infos_gen stri ]
         (* default cases *)
         | x -> super#structure_item x
       in
 
-      try if not !ignore then expand stri else super#structure_item stri
-      with e ->
-        Error.print_exception e ;
-        raise InternalError
+      if not !ignore then expand stri else super#structure_item stri
   end
 
 let () =

@@ -23,10 +23,12 @@
 (*                                                                           *)
 (*****************************************************************************)
 open Ppxlib
-open Error
-open Helpers
-
-let attr_gen = "gen"
+module Error = Common.Error
+module H = Common.Helpers
+module AH = Common.Ast_helpers
+module Gens = Test.Gens
+module Properties = Test.Properties
+module Pp = Common.Pp
 
 (* Helper function to build tuple
 
@@ -69,7 +71,7 @@ let rec is_recursive type_name = function
   | Ptype_variant cstrs ->
       List.exists (is_recursive_constructor_decl type_name) cstrs
   | Ptype_record xs -> is_recursive_label_declarations type_name xs
-  | _ -> raise (CaseUnsupported "is_recursive")
+  | _ -> Error.case_unsupported ~case:"Ppx.Gen.is_recursive" ()
 
 and is_recursive_constructor_decl type_name cd =
   match cd.pcd_args with
@@ -92,7 +94,10 @@ and is_recursive_label_declarations type_name xs =
   match labels with
   | [] -> false
   | loc :: _ ->
-      raise (LocError (loc, "ppx_pbt does not supports recursive record"))
+      Error.location_error
+        ~loc
+        ~msg:"ppx_pbt does not supports recursive record"
+        ()
 
 and is_recursive_core_type type_name ct =
   match ct.ptyp_desc with
@@ -124,15 +129,15 @@ let rec curry_args ~loc args body =
 let extract_args ~loc params =
   let to_pat (ct, _) =
     match ct.ptyp_desc with
-    | Ptyp_var s -> Helpers.build_pattern_var loc @@ gen_name s
-    | _ ->
-        raise (CaseUnsupported "Type_declaration.ptype_params in extract_args")
+    | Ptyp_var s -> AH.Pattern.ppat_var ~loc @@ gen_name s
+    | _ -> Error.case_unsupported ~case:"Ppx.Gen.extract_args" ()
   in
+
   List.map to_pat params
 
 let rec create_gen_from_td ~loc td =
   let type_name = td.ptype_name.txt in
-  let name = Helpers.build_pattern_var loc @@ gen_name type_name in
+  let name = AH.Pattern.ppat_var ~loc @@ gen_name type_name in
   let args = extract_args ~loc td.ptype_params in
   let body =
     match td.ptype_manifest with
@@ -178,7 +183,7 @@ and create_gen_from_core_type ~loc ct =
           let gen_args =
             List.map (fun x -> (Nolabel, create_gen_from_core_type ~loc x)) xs
           in
-          Helpers.build_apply loc gen_t gen_args)
+          AH.Expression.pexp_apply ~loc ~f:gen_t ~args:gen_args ())
   (*
       Tuples are translated in different ways based on their sizes:
 
@@ -198,7 +203,8 @@ and create_gen_from_core_type ~loc ct =
   *)
   | Ptyp_tuple elems -> create_gen_from_tuple ~loc elems
   | Ptyp_var s -> create_gen_from_string ~loc s
-  | _ -> raise (CaseUnsupported "create_gen_from_core_type")
+  | _ ->
+      Error.case_unsupported ~loc ~case:"Ppx.Gen.create_gen_from_core_type" ()
 
 and create_gen_from_kind ~loc type_name kind =
   match kind with
@@ -207,7 +213,7 @@ and create_gen_from_kind ~loc type_name kind =
       else
         let gens =
           List.map (create_gen_from_constructor_decl ~loc) cstrs_decl
-          |> Helpers.build_list loc
+          |> AH.Expression.pexp_list ~loc
         in
         [%expr QCheck.oneof [%e gens]]
   | Ptype_record label_decls ->
@@ -215,7 +221,7 @@ and create_gen_from_kind ~loc type_name kind =
       (* If is_recursive returns true, the programs raises an exception *)
       let (pat, gens, body) = create_record ~loc label_decls in
       [%expr QCheck.map (fun [%p pat] -> [%e body]) [%e gens]]
-  | _ -> raise (CaseUnsupported "create_gen_from_kind")
+  | _ -> Error.case_unsupported ~loc ~case:"Ppx.Gen.create_gen_from_kind" ()
 
 (* Helper function to build a record
 
@@ -230,17 +236,17 @@ and create_record ~loc label_decls =
     List.map2
       (fun x gen ->
         let name = x.pld_name.txt in
-        (Helpers.build_longident loc (Lident name), Helpers.build_lident loc gen))
+        (H.mk_loc ~loc (Lident name), AH.Expression.pexp_lident ~loc gen))
       label_decls
       gens_name
   in
-  let body = Helpers.build_expression loc @@ Pexp_record (body_record, None) in
+  let body = AH.Expression.expression ~loc @@ Pexp_record (body_record, None) in
 
   (pat, gens, body)
 
 and create_from_kind_rec _kind =
   (* TODO *)
-  raise (CaseUnsupported "create_from_kind_rec")
+  Error.case_unsupported ~case:"Ppx.Gen.create_from_kind_rec" ()
 
 (*
   type constructor_declaration = {
@@ -331,13 +337,13 @@ and create_gen_from_constructor_decl ~loc cd =
   else create_gen_from_cd_without_args ~loc cd
 
 and create_gen_from_cd_without_args ~loc cd =
-  let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
-  let k = Helpers.build_construct loc k_name None in
+  let kname = H.mk_loc ~loc (Lident cd.pcd_name.txt) in
+  let k = AH.Expression.pexp_construct ~loc ~kname ~kargs:None () in
 
   [%expr QCheck.make @@ QCheck.Gen.return [%e k]]
 
 and create_gen_from_cd_with_args ~loc cd =
-  let k_name = Helpers.build_longident loc @@ Lident cd.pcd_name.txt in
+  let kname = H.mk_loc ~loc @@ Lident cd.pcd_name.txt in
 
   match cd.pcd_args with
   | Pcstr_tuple cts ->
@@ -346,27 +352,37 @@ and create_gen_from_cd_with_args ~loc cd =
       in
 
       let k_args =
-        List.map (Helpers.build_lident loc) gens_name |> Helpers.build_tuple loc
+        List.map (AH.Expression.pexp_lident ~loc) gens_name
+        |> AH.Expression.pexp_tuple ~loc
       in
 
-      let build = Helpers.build_construct loc k_name (Some k_args) in
+      let build =
+        AH.Expression.pexp_construct ~loc ~kname ~kargs:(Some k_args) ()
+      in
 
       [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
   | Pcstr_record xs ->
       let (pat, gens, record) = create_record ~loc xs in
-      let build = Helpers.build_construct loc k_name (Some record) in
+      let build =
+        AH.Expression.pexp_construct ~loc ~kname ~kargs:(Some record) ()
+      in
 
       [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
 and create_gen_from_string ~loc s =
+  (*
   match Gens.builtin_generators loc s with
   | Some e -> e
-  | None -> Helpers.build_lident loc @@ gen_name s
+  | None -> Helpers.build_lident loc @@ gen_name s *)
+  let _ = (loc, s) in
+  failwith "TODO"
 
 and create_gen_from_longident ~loc = function
   | Lident s -> create_gen_from_string ~loc s
-  | Ldot (lg, s) -> Helpers.build_ident loc @@ Ldot (lg, gen_name s)
-  | _ -> raise (CaseUnsupported "create_gen_from_longident")
+  | Ldot (lg, s) ->
+      AH.Expression.pexp_ident ~loc @@ H.mk_loc ~loc @@ Ldot (lg, gen_name s)
+  | _ ->
+      Error.case_unsupported ~loc ~case:"Ppx.Gen.create_gen_from_longident" ()
 
 and create_gen_from_tuple ~loc elems =
   let gens = List.map (create_gen_from_core_type ~loc) elems in
@@ -379,7 +395,8 @@ and create_gen_from_tuple ~loc elems =
   | gens ->
       let (gens, gens_name, pat) = build_nested_gens loc gens in
       let build =
-        List.map (Helpers.build_lident loc) gens_name |> Helpers.build_tuple loc
+        List.map (AH.Expression.pexp_lident ~loc) gens_name
+        |> AH.Expression.pexp_tuple ~loc
       in
       [%expr QCheck.map (fun [%p pat] -> [%e build]) [%e gens]]
 
@@ -394,7 +411,7 @@ let replace_stri infos stri =
       TODO: does Nonrecursive type exists ?
    *)
   | Pstr_type (_, [ x ]) ->
-      let loc = info.stri_loc in
+      let loc = H.Info.get_loc info in
       create_gen_from_td ~loc x
   (*
       Pstr_type of _ * type_declaration list
@@ -404,5 +421,5 @@ let replace_stri infos stri =
   *)
   | Pstr_type (_, xs) ->
       List.iter Pp.print_type_decl xs ;
-      raise (CaseUnsupported "Recursive type")
+      Error.case_unsupported ~case:"Ppx.Gen.replace_stri" ()
   | _ -> assert false

@@ -43,22 +43,20 @@ type properties = property list
 and t = properties
 
 let check_help loc ppty xs ty =
-  let (required, msg) =
+  let (required, msg, f) =
     match ty with
-    | `Args -> (Pbt.Properties.nb_of_gens ppty, "arguments")
-    | `Gens -> (Pbt.Properties.nb_of_args ppty, "generators")
+    | `Args ->
+        (Pbt.Properties.nb_of_gens ppty, "arguments", Error.property_arg_missing)
+    | `Gens ->
+        ( Pbt.Properties.nb_of_args ppty,
+          "generators",
+          Error.property_gen_missing )
   in
 
   match required with
   | Some n ->
       let len = List.length xs in
-      if n <> len then
-        Error.property_gen_missing
-          ~loc
-          ~property:ppty
-          ~required:n
-          ~actual:len
-          ()
+      if n <> len then f ~loc ~property:ppty ~required:n ~actual:len ()
   | None ->
       Printf.printf
         "Ppx_pbt (Warning): %s is your local property, can not check %s\n"

@@ -23,20 +23,10 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-(** Ppx-rewriter for property based testing with QCheck *)
+(** Module expanding a type declaration with a QCheck.arbitrary *)
+
 open Ppxlib
 
-(** Filter attributes with a given name *)
-val filter_attributes : string -> attributes -> Common.Helpers.Info.t list
-
-(** Get attributes attached to a structure item *)
-val get_attributes : structure_item -> attribute list
-
-(** Name of attributes for ppx_pbt.pbt *)
-val pbt_name : string
-
-(** Name of attributes for ppx_pbt.gen *)
-val gen_name : string
-
-(** /!\ Meant for testing /!\ *)
-val ignore : bool ref
+(** Module entry point, returns the QCheck function *)
+val replace_stri :
+  Common.Helpers.Info.t list -> structure_item -> structure_item

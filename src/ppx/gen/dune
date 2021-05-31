@@ -1,0 +1,5 @@
+(library
+ (name gen)
+ (public_name ppx_pbt.ppx_pbt.gen)
+ (libraries ppxlib qcheck common test)
+ (preprocess (pps ppxlib.metaquot)))
