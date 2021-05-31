@@ -49,9 +49,8 @@ module Gens = struct
     | "bool" -> [%expr Pbt.Gens.float]
     | "unit" -> [%expr Pbt.Gens.float]
     | s ->
-        let n = Printf.sprintf "gen_%s" s in
         {
-          pexp_desc = Pexp_ident { txt = Lident n; loc };
+          pexp_desc = Pexp_ident { txt = Lident s; loc };
           pexp_loc = loc;
           pexp_loc_stack = [];
           pexp_attributes = [];
