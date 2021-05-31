@@ -63,27 +63,6 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
- (targets test_eq.expected.format)
- (deps (:pp pp.exe) (:input test_eq.expected.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (targets test_eq.actual)
- (deps (:pp pp.exe) (:input test_eq.ml))
- (action (bash "./%{pp} --impl %{input} -o %{targets}")))
-
-(rule
- (alias runtest)
- (deps (:actual test_eq.actual) (:expected test_eq.expected.format))
- (action (diff %{expected} %{actual})))
-
-(test
- (name test_eq)
- (modules test_eq)
- (libraries zarith data-encoding)
- (preprocess (pps ppx_pbt)))
-
-(rule
  (targets test_local_gen.expected.format)
  (deps (:pp pp.exe) (:input test_local_gen.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
@@ -122,6 +101,27 @@
 (test
  (name test_neutral)
  (modules test_neutral)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
+
+(rule
+ (targets test_oracle.expected.format)
+ (deps (:pp pp.exe) (:input test_oracle.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_oracle.actual)
+ (deps (:pp pp.exe) (:input test_oracle.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_oracle.actual) (:expected test_oracle.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_oracle)
+ (modules test_oracle)
  (libraries zarith data-encoding)
  (preprocess (pps ppx_pbt)))
 
