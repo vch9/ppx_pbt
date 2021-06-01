@@ -103,6 +103,15 @@ module Expression : sig
     ?attributes:attributes ->
     string ->
     expression
+
+  (** Build a Pexp_record *)
+  val pexp_record :
+    ?loc:location ->
+    ?loc_stack:location_stack ->
+    ?attributes:attributes ->
+    fields:(longident_loc * expression) list ->
+    expression option ->
+    expression
 end
 
 (* Helper module with builders for Ppxlib.Ast.pattern *)

@@ -98,6 +98,9 @@ module Expression = struct
     let loc' = Default.loc loc in
     expression ?loc ?loc_stack ?attributes
     @@ Pexp_ident { txt = Lident x; loc = loc' }
+
+  let pexp_record ?loc ?loc_stack ?attributes ~fields x =
+    expression ?loc ?loc_stack ?attributes @@ Pexp_record (fields, x)
 end
 
 module Pattern = struct
