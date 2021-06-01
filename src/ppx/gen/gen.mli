@@ -27,6 +27,80 @@
 
 open Ppxlib
 
-(** Module entry point, returns the QCheck function *)
+(** Transform a core_type into a QCheck.arbitrary
+
+    - [X] ident: int; string; char; ..
+
+    - [X] ident with arguments: list ; option; 'a type ..
+
+    - [X] tuple: ('a * 'b'); ('a * 'b * 'c); ..
+    
+    - [X] var: 'a t; 'a option; 'a list *)
+val from_core_type : loc:location -> core_type -> expression
+
+(** Transform a type kind into a QCheck.arbitrary
+    
+    - [X] type kind is a record, we use [from_record]
+    - [X] type kind is a tuple, we use [from_record] *)
+val from_type_kind : loc:location -> ty:string -> type_kind -> expression
+
+(** Transform a record into a record QCheck.arbitrary *)
+val from_record : loc:location -> label_declaration list -> expression
+
+(** Transform a tuple into a tuple QCheck.arbitrary *)
+val from_tuple : loc:location -> core_type list -> expression
+
+(** Transform a Ptype_variant into a 'a QCheck.arbitrary
+
+    - [ ] the type is self recursive
+      {[
+      type tree = Leaf | Node of int * tree * tree
+      ]}
+
+      The distinction betweens recursive nodes and leaves must be considered
+      in order to avoid a infinite loop on a recursive type
+
+    - [X] the type is a list of constructor
+      {[
+      type color = Green | Blue | Red | Any of int
+      ]}
+
+      We just have to chose one of the constructors built using
+      [from_constructor_decl]. *)
+val from_variant :
+  loc:location -> ty:string -> constructor_declaration list -> expression
+
+(** Transform a constructor declaration into a 'a QCheck.arbitrary
+
+    - [X] constructors without argument
+      {[
+      type t = A | B | C [@@gen]
+      ]}
+
+    - [X] constructors with argument
+
+      - [X] argument as tuple
+        {[
+        type t = A of int | B of int * int
+        ]}
+
+      - [X] argument as record
+        {[
+        type t = A of { a : int }
+        ]}
+*)
+val from_constructor_decl :
+  loc:location -> constructor_declaration -> expression
+
+(** Transform a type declaration into a 'a QCheck.arbitrary
+
+    core of the type description is either found in
+    - type_declaration.ptype_manifest
+    - type_declaration.ptype_kind 
+    
+    TODO is this a xor ? *)
+val from_type_declaration : loc:location -> type_declaration -> structure_item
+
+(** Module entry point, returns the QCheck 'a QCheck.arbitrary *)
 val replace_stri :
   Common.Helpers.Info.t list -> structure_item -> structure_item
