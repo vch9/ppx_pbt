@@ -147,6 +147,27 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
+ (targets test_tree.expected.format)
+ (deps (:pp pp.exe) (:input test_tree.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_tree.actual)
+ (deps (:pp pp.exe) (:input test_tree.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_tree.actual) (:expected test_tree.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_tree)
+ (modules test_tree)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
+
+(rule
  (targets test_tuple.expected.format)
  (deps (:pp pp.exe) (:input test_tuple.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
