@@ -30,6 +30,8 @@ module T = Types_helper
 module P = Common.Ast_helpers.Pattern
 module PP = Common.Pp
 
+let rec_flag = ref false
+
 let extract_args ~loc params =
   let to_pat (ct, _) =
     match ct.ptyp_desc with
@@ -77,9 +79,9 @@ and is_recursive_core_type ~loc ~ty ct =
       || List.exists (is_recursive_core_type ~loc ~ty) cts
   | _ -> false
 
-let rec from_core_type ~loc ct =
+let rec from_core_type ~loc ?rec_types ct =
   match ct.ptyp_desc with
-  | Ptyp_constr ({ txt = ty; _ }, []) -> T.from_longident ~loc ty
+  | Ptyp_constr ({ txt = ty; _ }, []) -> T.from_longident ~loc ?rec_types ty
   | Ptyp_constr ({ txt = ty; _ }, args) ->
       let f = T.from_longident ~loc ty in
       let args = List.map (from_core_type ~loc) args in
@@ -102,29 +104,41 @@ and from_tuple ~loc cts =
   T.tuple ~loc gens
 
 and from_variant ~loc ~ty xs =
-  if is_recursive ~loc ~ty @@ Ptype_variant xs then
-    Error.case_unsupported ~case:"constructor declarations recursive" ()
+  if is_recursive ~loc ~ty @@ Ptype_variant xs then (
+    let is_leave x = not @@ is_recursive_constructor_decl ~loc ~ty x in
+
+    let leaves =
+      List.filter is_leave xs
+      |> List.map (fun x -> from_constructor_decl ~loc x)
+    in
+    let nodes = List.map (from_constructor_decl ~rec_types:[ ty ] ~loc) xs in
+
+    rec_flag := true ;
+
+    T.tree ~loc ~ty ~leaves ~nodes ())
   else
     let gens = List.map (from_constructor_decl ~loc) xs in
     T.constructors ~loc gens
 
-and from_constructor_decl ~loc x =
+and from_constructor_decl ~loc ?rec_types x =
   let kname = x.pcd_name.txt in
   let f ~kargs = T.constructor ~loc ~kname ~kargs () in
   match x.pcd_args with
   | Pcstr_tuple [] | Pcstr_record [] -> T.constructor ~loc ~kname ()
   | Pcstr_tuple xs ->
-      let gens = List.map (from_core_type ~loc) xs in
+      let gens = List.map (from_core_type ~loc ?rec_types) xs in
       let kargs = T.tuple' ~loc gens in
       f ~kargs
   | Pcstr_record xs ->
-      let gens = List.map (fun x -> from_core_type ~loc x.pld_type) xs in
+      let gens =
+        List.map (fun x -> from_core_type ~loc ?rec_types x.pld_type) xs
+      in
       let kargs = T.record' ~loc ~gens xs in
       f ~kargs
 
 let from_type_declaration ~loc td =
   let ty = td.ptype_name.txt in
-  let name = P.ppat_var ~loc @@ T.name ty in
+  let name = T.name ty in
 
   let body =
     match td.ptype_manifest with
@@ -133,8 +147,9 @@ let from_type_declaration ~loc td =
   in
 
   let args = extract_args ~loc td.ptype_params in
+  let flag = !rec_flag in
 
-  T.gen ~loc ~args ~name ~body ()
+  T.gen ~loc ~flag ~args ~name ~body ()
 
 let replace_stri infos stri =
   let info = List.hd infos in

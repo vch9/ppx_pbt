@@ -35,8 +35,20 @@ open Ppxlib
 
     - [X] tuple: ('a * 'b'); ('a * 'b * 'c); ..
     
-    - [X] var: 'a t; 'a option; 'a list *)
-val from_core_type : loc:location -> core_type -> expression
+    - [X] var: 'a t; 'a option; 'a list
+
+    When the rec_types contains types elements, that means they need to
+    be an application of a generator
+
+    A regular type would be translated to
+    {[ fun s -> gen_s ]}
+
+    Meanwhile a recursive type
+    {[ fun s -> gen_s (n - 1) ]}
+    Recursives types contains only one argument: the fuel. It is always
+    called n *)
+val from_core_type :
+  loc:location -> ?rec_types:string list -> core_type -> expression
 
 (** Transform a type kind into a QCheck.arbitrary
     
@@ -66,7 +78,7 @@ val from_tuple : loc:location -> core_type list -> expression
       ]}
 
       We just have to chose one of the constructors built using
-      [from_constructor_decl]. *)
+      {!from_constructor_decl}. *)
 val from_variant :
   loc:location -> ty:string -> constructor_declaration list -> expression
 
@@ -88,9 +100,13 @@ val from_variant :
         {[
         type t = A of { a : int }
         ]}
-*)
+
+    ?rec_types allows optional additional information to {!from_core_type} *)
 val from_constructor_decl :
-  loc:location -> constructor_declaration -> expression
+  loc:location ->
+  ?rec_types:string list ->
+  constructor_declaration ->
+  expression
 
 (** Transform a type declaration into a 'a QCheck.arbitrary
 
