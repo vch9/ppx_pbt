@@ -12,11 +12,11 @@ end
 include struct
   type t1 = int my_option [@@gen]
 
-  let gen_t1 = gen_my_option Pbt.Gens.int
+  let gen_t1 = gen_my_option QCheck.int
 end
 
 include struct
   type t2 = int option [@@gen]
 
-  let gen_t2 = Pbt.Gens.option Pbt.Gens.int
+  let gen_t2 = QCheck.option QCheck.int
 end

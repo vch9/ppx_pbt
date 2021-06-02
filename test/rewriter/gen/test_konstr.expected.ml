@@ -1,7 +1,7 @@
 include struct
   type t1 = A of int [@@gen]
 
-  let gen_t1 = QCheck.oneof [ QCheck.map (fun gen_0 -> A gen_0) Pbt.Gens.int ]
+  let gen_t1 = QCheck.oneof [ QCheck.map (fun gen_0 -> A gen_0) QCheck.int ]
 end
 
 let pp_t1 (A i) = Printf.sprintf "A %d" i
@@ -12,8 +12,8 @@ include struct
   let gen_t2 =
     QCheck.oneof
       [
-        QCheck.map (fun gen_0 -> B gen_0) Pbt.Gens.int;
-        QCheck.map (fun gen_0 -> C gen_0) Pbt.Gens.int;
+        QCheck.map (fun gen_0 -> B gen_0) QCheck.int;
+        QCheck.map (fun gen_0 -> C gen_0) QCheck.int;
       ]
 end
 
@@ -29,7 +29,7 @@ include struct
       [
         QCheck.map (fun gen_0 -> X gen_0) gen_t1;
         QCheck.map (fun gen_0 -> Y gen_0) gen_t2;
-        QCheck.map (fun gen_0 -> Z gen_0) Pbt.Gens.string;
+        QCheck.map (fun gen_0 -> Z gen_0) QCheck.string;
       ]
 end
 
@@ -56,12 +56,12 @@ include struct
   let gen_t5 =
     QCheck.oneof
       [
-        QCheck.map (fun gen_0 -> Simple gen_0) Pbt.Gens.int;
+        QCheck.map (fun gen_0 -> Simple gen_0) QCheck.int;
         QCheck.map
           (fun (gen_0, gen_1) -> Double (gen_0, gen_1))
-          (QCheck.pair Pbt.Gens.int Pbt.Gens.int);
+          (QCheck.pair QCheck.int QCheck.int);
         QCheck.map
           (fun (gen_0, (gen_1, gen_2)) -> Triple (gen_0, gen_1, gen_2))
-          (QCheck.pair Pbt.Gens.int (QCheck.pair Pbt.Gens.int Pbt.Gens.int));
+          (QCheck.pair QCheck.int (QCheck.pair QCheck.int QCheck.int));
       ]
 end

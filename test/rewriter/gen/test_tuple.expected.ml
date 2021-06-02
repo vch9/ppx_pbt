@@ -1,20 +1,30 @@
 include struct
   type two = int * string [@@gen]
 
-  let gen_two = QCheck.pair Pbt.Gens.int Pbt.Gens.string
+  let gen_two =
+    QCheck.map
+      (fun (gen_0, gen_1) -> (gen_0, gen_1))
+      (QCheck.pair QCheck.int QCheck.string)
 end
 
 include struct
   type three = int * string * char [@@gen]
 
-  let gen_three = QCheck.triple Pbt.Gens.int Pbt.Gens.string Pbt.Gens.char
+  let gen_three =
+    QCheck.map
+      (fun (gen_0, (gen_1, gen_2)) -> (gen_0, gen_1, gen_2))
+      (QCheck.pair QCheck.int (QCheck.pair QCheck.string QCheck.char))
 end
 
 include struct
   type four = int * string * char * float [@@gen]
 
   let gen_four =
-    QCheck.quad Pbt.Gens.int Pbt.Gens.string Pbt.Gens.char Pbt.Gens.float
+    QCheck.map
+      (fun ((gen_0, gen_1), (gen_2, gen_3)) -> (gen_0, gen_1, gen_2, gen_3))
+      (QCheck.pair
+         (QCheck.pair QCheck.int QCheck.string)
+         (QCheck.pair QCheck.char QCheck.float))
 end
 
 include struct
@@ -25,10 +35,10 @@ include struct
       (fun (gen_0, ((gen_1, gen_2), (gen_3, gen_4))) ->
         (gen_0, gen_1, gen_2, gen_3, gen_4))
       (QCheck.pair
-         Pbt.Gens.int
+         QCheck.int
          (QCheck.pair
-            (QCheck.pair Pbt.Gens.string Pbt.Gens.char)
-            (QCheck.pair Pbt.Gens.float Pbt.Gens.unit)))
+            (QCheck.pair QCheck.string QCheck.char)
+            (QCheck.pair QCheck.float QCheck.unit)))
 end
 
 include struct
@@ -39,6 +49,6 @@ include struct
       (fun ((gen_0, (gen_1, gen_2)), (gen_3, (gen_4, gen_5))) ->
         (gen_0, gen_1, gen_2, gen_3, gen_4, gen_5))
       (QCheck.pair
-         (QCheck.pair Pbt.Gens.int (QCheck.pair Pbt.Gens.string Pbt.Gens.char))
-         (QCheck.pair Pbt.Gens.float (QCheck.pair Pbt.Gens.unit Pbt.Gens.unit)))
+         (QCheck.pair QCheck.int (QCheck.pair QCheck.string QCheck.char))
+         (QCheck.pair QCheck.float (QCheck.pair QCheck.unit QCheck.unit)))
 end

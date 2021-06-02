@@ -4,7 +4,7 @@ include struct
   let gen_t =
     QCheck.map
       (fun (gen_0, gen_1) -> { a = gen_0; b = gen_1 })
-      (QCheck.pair Pbt.Gens.int Pbt.Gens.string)
+      (QCheck.pair QCheck.int QCheck.string)
 end
 
 include struct
@@ -13,7 +13,7 @@ include struct
   let gen_mutable_t =
     QCheck.map
       (fun (gen_0, gen_1) -> { a = gen_0; b = gen_1 })
-      (QCheck.pair Pbt.Gens.int Pbt.Gens.string)
+      (QCheck.pair QCheck.int QCheck.string)
 end
 
 include struct
@@ -25,6 +25,6 @@ include struct
         QCheck.map (fun gen_0 -> A gen_0) gen_t;
         QCheck.map
           (fun (gen_0, gen_1) -> B { left = gen_0; right = gen_1 })
-          (QCheck.pair Pbt.Gens.int Pbt.Gens.int);
+          (QCheck.pair QCheck.int QCheck.int);
       ]
 end

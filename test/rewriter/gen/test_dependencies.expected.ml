@@ -2,14 +2,14 @@ module SomeModule = struct
   include struct
     type t = int [@@gen]
 
-    let gen_t = Pbt.Gens.int
+    let gen_t = QCheck.int
   end
 
   module SomeOtherModule = struct
     include struct
       type t = float [@@gen]
 
-      let gen_t = Pbt.Gens.float
+      let gen_t = QCheck.float
     end
   end
 end

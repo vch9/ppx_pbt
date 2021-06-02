@@ -7,7 +7,7 @@ end
 include struct
   type 'a t2 = 'a list [@@gen]
 
-  let gen_t2 gen_a = Pbt.Gens.list gen_a
+  let gen_t2 gen_a = QCheck.list gen_a
 end
 
 include struct
@@ -31,5 +31,8 @@ end
 include struct
   type ('left, 'right) t5 = 'left * 'right [@@gen]
 
-  let gen_t5 gen_left gen_right = QCheck.pair gen_left gen_right
+  let gen_t5 gen_left gen_right =
+    QCheck.map
+      (fun (gen_0, gen_1) -> (gen_0, gen_1))
+      (QCheck.pair gen_left gen_right)
 end
