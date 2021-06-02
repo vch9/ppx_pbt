@@ -197,3 +197,14 @@ val constructor :
   ?kargs:pattern * expression * expression ->
   unit ->
   expression
+
+(** Create a QCheck.arbitrary using args name and body
+
+    let name args = body *)
+val gen :
+  loc:location ->
+  args:pattern list ->
+  name:pattern ->
+  body:expression ->
+  unit ->
+  structure_item

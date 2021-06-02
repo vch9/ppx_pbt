@@ -30,6 +30,14 @@ module T = Types_helper
 module P = Common.Ast_helpers.Pattern
 module PP = Common.Pp
 
+let extract_args ~loc params =
+  let to_pat (ct, _) =
+    match ct.ptyp_desc with
+    | Ptyp_var s -> P.ppat_var ~loc @@ "gen_" ^ s
+    | _ -> Error.case_unsupported ~loc ~case:"Ppx.Gen.gen.extract_args" ()
+  in
+  List.map to_pat params
+
 let rec is_recursive ~loc ~ty = function
   | Ptype_variant cstrs ->
       List.exists (is_recursive_constructor_decl ~loc ~ty) cstrs
@@ -124,7 +132,9 @@ let from_type_declaration ~loc td =
     | Some ct -> from_core_type ~loc ct
   in
 
-  [%stri let [%p name] = [%e body]]
+  let args = extract_args ~loc td.ptype_params in
+
+  T.gen ~loc ~args ~name ~body ()
 
 let replace_stri infos stri =
   let info = List.hd infos in

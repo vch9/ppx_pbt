@@ -108,3 +108,12 @@ let constructor ~loc ~kname ?kargs () =
   | Some (pat, gens, expr) ->
       let expr = E.pexp_construct ~loc ~kname ~kargs:(Some expr) () in
       [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]]
+
+let rec curry_args ~loc args body =
+  match args with
+  | [] -> body
+  | x :: xs -> [%expr fun [%p x] -> [%e curry_args ~loc xs body]]
+
+let gen ~loc ~args ~name ~body () =
+  let body = curry_args ~loc args body in
+  [%stri let [%p name] = [%e body]]
