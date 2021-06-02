@@ -48,7 +48,11 @@ module Primitive = struct
         | None -> gen
         | Some xs ->
             if List.mem s xs then
-              E.pexp_apply ~loc ~f:gen ~args:[ (Nolabel, [%expr n - 1]) ] ()
+              E.pexp_apply
+                ~loc
+                ~f:(E.pexp_lident ~loc @@ name (s ^ "'"))
+                ~args:[ (Nolabel, [%expr n - 1]) ]
+                ()
             else gen)
 end
 
@@ -134,14 +138,14 @@ let rec curry_args ~loc args body =
 let gen ~loc ~flag ~args ~name ~body () =
   let body = curry_args ~loc args body in
   let pat_name = P.ppat_var ~loc name in
+  let name' = name ^ "'" in
+  let pat_name' = P.ppat_var ~loc name' in
   if not flag then [%stri let [%p pat_name] = [%e body]]
   else
-    let f = E.pexp_lident ~loc name in
+    let f = E.pexp_lident ~loc name' in
     let args = [ (Nolabel, [%expr 5]) ] in
     let pat_expr = E.pexp_apply ~loc ~f ~args () in
     [%stri
-      include struct
-        let rec [%p pat_name] = [%e body]
-
-        let [%p pat_name] = [%e pat_expr]
-      end]
+      let [%p pat_name] =
+        let rec [%p pat_name'] = [%e body] in
+        [%e pat_expr]]
