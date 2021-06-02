@@ -32,14 +32,15 @@ val name : string -> string
 
 (** Module representing OCaml primitives types supported *)
 module Primitive : sig
-  (** Converts string name of type into QCheck arbitrary *)
-  val from_string : loc:location -> string -> expression
+  (** Convert string name of type into QCheck arbitrary
+
+      rec_types cover the special case where the generator is a recursive
+      function *)
+  val from_string :
+    loc:location -> ?rec_types:string list -> string -> expression
 end
 
-(** Converts a 'a type into a parametrizable QCheck arbitrary *)
-val parametrizable_type : unit
-
-(** Converts an applicated parametrizable type into a QCheck arbitrary 
+(** Convert an applicated parametrizable type into a QCheck arbitrary 
 
     In this example, the type is an parametrizable list applicated to string:
     {[
@@ -51,16 +52,20 @@ val parametrizable_type : unit
 val constr_type :
   loc:location -> f:expression -> args:expression list -> unit -> expression
 
-(** Transforms a longident into a QCheck.arbitrary 
+(** Transform a longident into a QCheck.arbitrary
 
     Multiples cases:
     - [X] the type is a identifier, either from a Primitive type or local scope
     - [X] the type comes from an outside module, we require a generator inside that
     outside module
-    - [ ] the type is an application, can that type happens ? *)
-val from_longident : loc:location -> longident -> expression
+    - [ ] the type is an application, can that type happens ?
 
-(** Transforms list of generators into a triple: 
+    rec_types cover the special case where the generator is a recursive
+    function *)
+val from_longident :
+  loc:location -> ?rec_types:string list -> longident -> expression
+
+(** Transform list of generators into a triple:
     
     - expressions nested with QCheck.pair expression
     - generators names used in the expression
@@ -98,7 +103,7 @@ val record' :
   label_declaration list ->
   pattern * expression * expression
 
-(** Converts generators and labels declarations in a application of a record type
+(** Convert generators and labels declarations in a application of a record type
 
     Example:
     {[
@@ -138,7 +143,7 @@ val record :
 val tuple' :
   loc:location -> expression list -> pattern * expression * expression
 
-(** Converts generators in a application of a tuple
+(** Convert generators in a application of a tuple
     
     Example:
     {[
@@ -150,7 +155,7 @@ val tuple' :
 *)
 val tuple : loc:location -> expression list -> expression
 
-(** Converts a list of constructors into a single expression choosing the constructor
+(** Convert a list of constructors into a single expression choosing the constructor
 
     Example:
     {[
@@ -169,7 +174,7 @@ val tuple : loc:location -> expression list -> expression
 *)
 val constructors : loc:location -> expression list -> expression
 
-(** Converts a constructor name into an expression constructor QCheck.arbitrary
+(** Convert a constructor name into an expression constructor QCheck.arbitrary
 
     Example:
     {[
@@ -198,13 +203,52 @@ val constructor :
   unit ->
   expression
 
+(** Convert a tree type like into a recursive generator expression
+
+    The recursive generator uses a fuel, we could imagine that in future work
+    the fuel would be provided by the user.
+
+    Example:
+    {[
+    type t = Tree | Node of int * leaf * leaf
+    [@@gen]
+
+    let rec gen_tree fuel =
+      let open QCheck in
+      match fuel with
+      | 0 -> oneof [ make @@ Gen.return Leaf ]
+      | n ->
+        oneof
+          [
+            make @@ Gen.return Leaf;
+            map
+              (fun (gen_0, (gen_1, gen_2)) -> Node (gen_0, gen_1, gen_2))
+              (pair int
+                 (pair (gen_tree (n - 1)) (gen_tree (n - 1))));
+          ]
+
+    let gen_tree = gen_tree 5
+    ]}
+ *)
+val tree :
+  loc:location ->
+  ty:string ->
+  leaves:expression list ->
+  nodes:expression list ->
+  unit ->
+  expression
+
 (** Create a QCheck.arbitrary using args name and body
 
-    let name args = body *)
+    let name args = body
+
+    if the flag is true, we add the recursive flag:
+    let rec name args = body *)
 val gen :
   loc:location ->
+  flag:bool ->
   args:pattern list ->
-  name:pattern ->
+  name:string ->
   body:expression ->
   unit ->
   structure_item

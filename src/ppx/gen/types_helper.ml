@@ -26,13 +26,14 @@
 open Ppxlib
 module Error = Common.Error
 module E = Common.Ast_helpers.Expression
+module P = Common.Ast_helpers.Pattern
 module H = Common.Helpers
 module Pairs = Common.Helpers.Pairs
 
 let name s = Printf.sprintf "gen_%s" s
 
 module Primitive = struct
-  let from_string ~loc = function
+  let from_string ~loc ?rec_types = function
     | "int" -> [%expr QCheck.int]
     | "string" -> [%expr QCheck.string]
     | "char" -> [%expr QCheck.char]
@@ -41,17 +42,22 @@ module Primitive = struct
     | "unit" -> [%expr QCheck.unit]
     | "option" -> [%expr QCheck.option]
     | "list" -> [%expr QCheck.list]
-    | s -> E.pexp_lident ~loc @@ name s
+    | s -> (
+        let gen = E.pexp_lident ~loc @@ name s in
+        match rec_types with
+        | None -> gen
+        | Some xs ->
+            if List.mem s xs then
+              E.pexp_apply ~loc ~f:gen ~args:[ (Nolabel, [%expr n - 1]) ] ()
+            else gen)
 end
-
-let parametrizable_type = ()
 
 let constr_type ~loc ~f ~args () =
   let args = List.map (fun x -> (Nolabel, x)) args in
   E.pexp_apply ~loc ~f ~args ()
 
-let from_longident ~loc = function
-  | Lident s -> Primitive.from_string ~loc s
+let from_longident ~loc ?rec_types = function
+  | Lident s -> Primitive.from_string ~loc ?rec_types s
   | Ldot (lg, s) -> E.pexp_ident ~loc @@ H.mk_loc ~loc @@ Ldot (lg, name s)
   | _ ->
       Error.case_unsupported
@@ -109,11 +115,33 @@ let constructor ~loc ~kname ?kargs () =
       let expr = E.pexp_construct ~loc ~kname ~kargs:(Some expr) () in
       [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]]
 
+let tree ~loc ~ty ~leaves ~nodes () =
+  let _ = ty in
+
+  let leaves = E.pexp_list ~loc leaves and nodes = E.pexp_list ~loc nodes in
+
+  let rec_gen =
+    [%expr
+      function 0 -> QCheck.oneof [%e leaves] | n -> QCheck.oneof [%e nodes]]
+  in
+  rec_gen
+
 let rec curry_args ~loc args body =
   match args with
   | [] -> body
   | x :: xs -> [%expr fun [%p x] -> [%e curry_args ~loc xs body]]
 
-let gen ~loc ~args ~name ~body () =
+let gen ~loc ~flag ~args ~name ~body () =
   let body = curry_args ~loc args body in
-  [%stri let [%p name] = [%e body]]
+  let pat_name = P.ppat_var ~loc name in
+  if not flag then [%stri let [%p pat_name] = [%e body]]
+  else
+    let f = E.pexp_lident ~loc name in
+    let args = [ (Nolabel, [%expr 5]) ] in
+    let pat_expr = E.pexp_apply ~loc ~f ~args () in
+    [%stri
+      include struct
+        let rec [%p pat_name] = [%e body]
+
+        let [%p pat_name] = [%e pat_expr]
+      end]
