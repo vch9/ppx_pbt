@@ -39,6 +39,8 @@ module Expression : sig
     expression_desc ->
     expression
 
+  val unit : ?loc:location -> unit -> expression
+
   (** Build a Pexp_let *)
   val pexp_let :
     ?loc:location ->

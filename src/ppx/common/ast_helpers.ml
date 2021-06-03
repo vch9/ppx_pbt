@@ -60,6 +60,10 @@ module Expression = struct
       pexp_attributes = attributes;
     }
 
+  let unit ?loc () =
+    let loc = Default.loc loc in
+    [%expr ()]
+
   let pexp_let ?loc ?loc_stack ?attributes ?flag ?bindings exp =
     let flag = Default.flag flag in
     let bindings = Default.bindings bindings in
