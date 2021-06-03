@@ -147,6 +147,27 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
+ (targets test_recursive.expected.format)
+ (deps (:pp pp.exe) (:input test_recursive.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_recursive.actual)
+ (deps (:pp pp.exe) (:input test_recursive.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_recursive.actual) (:expected test_recursive.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_recursive)
+ (modules test_recursive)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
+
+(rule
  (targets test_tree.expected.format)
  (deps (:pp pp.exe) (:input test_tree.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))

@@ -4,4 +4,4 @@ type expr =
   | Eq of expr * expr
   | Lt of expr * expr
 
-and value = Bool of bool | Int of int [@@gen { fuel = 5 }]
+and value = Bool of bool | Int of int [@@gen]
