@@ -27,13 +27,14 @@ open Ppxlib
 module Error = Common.Error
 module E = Common.Ast_helpers.Expression
 module P = Common.Ast_helpers.Pattern
+module S = Common.Ast_helpers.Structure
 module H = Common.Helpers
 module Pairs = Common.Helpers.Pairs
 
 let name s = Printf.sprintf "gen_%s" s
 
 module Primitive = struct
-  let from_string ~loc ?rec_types = function
+  let from_string ~loc ?tree_types ?rec_types = function
     | "int" -> [%expr QCheck.int]
     | "string" -> [%expr QCheck.string]
     | "char" -> [%expr QCheck.char]
@@ -42,26 +43,31 @@ module Primitive = struct
     | "unit" -> [%expr QCheck.unit]
     | "option" -> [%expr QCheck.option]
     | "list" -> [%expr QCheck.list]
-    | s -> (
+    | s ->
         let gen = E.pexp_lident ~loc @@ name s in
-        match rec_types with
-        | None -> gen
-        | Some xs ->
-            if List.mem s xs then
-              E.pexp_apply
-                ~loc
-                ~f:(E.pexp_lident ~loc @@ name (s ^ "'"))
-                ~args:[ (Nolabel, [%expr n - 1]) ]
-                ()
-            else gen)
+
+        let gen_opt =
+          match (tree_types, rec_types) with
+          | (Some xs, _) when List.mem s xs ->
+              Some
+                (E.pexp_apply
+                   ~loc
+                   ~f:(E.pexp_lident ~loc @@ name (s ^ "'"))
+                   ~args:[ (Nolabel, [%expr n - 1]) ]
+                   ())
+          | (_, Some xs) when List.mem s xs ->
+              Some (E.pexp_apply ~loc ~f:gen ~args:[ (Nolabel, [%expr ()]) ] ())
+          | _ -> None
+        in
+        Option.fold ~none:gen ~some:(fun x -> x) gen_opt
 end
 
 let constr_type ~loc ~f ~args () =
   let args = List.map (fun x -> (Nolabel, x)) args in
   E.pexp_apply ~loc ~f ~args ()
 
-let from_longident ~loc ?rec_types = function
-  | Lident s -> Primitive.from_string ~loc ?rec_types s
+let from_longident ~loc ?tree_types ?rec_types = function
+  | Lident s -> Primitive.from_string ~loc ?tree_types ?rec_types s
   | Ldot (lg, s) -> E.pexp_ident ~loc @@ H.mk_loc ~loc @@ Ldot (lg, name s)
   | _ ->
       Error.case_unsupported
@@ -135,16 +141,18 @@ let rec curry_args ~loc args body =
   | [] -> body
   | x :: xs -> [%expr fun [%p x] -> [%e curry_args ~loc xs body]]
 
-let gen ~loc ~flag ~args ~name ~body () =
+let gen ~loc ~rec_flags ~args ~ty ~body () =
   let body = curry_args ~loc args body in
-  let pat_name = P.ppat_var ~loc name in
-  if not flag then [%stri let [%p pat_name] = [%e body]]
+  let pat_name = P.ppat_var ~loc (name ty) in
+  let ty_in_recs = List.mem ty rec_flags in
+
+  if not ty_in_recs then [%stri let [%p pat_name] = [%e body]]
   else
-    let name' = name ^ "'" in
+    let name' = name ty ^ "'" in
     let pat_name' = P.ppat_var ~loc name' in
     let f = E.pexp_lident ~loc name' in
     let args = [ (Nolabel, [%expr 5]) ] in
-    let unit = [ (Nolabel, [%expr ()]) ] in
+    let unit = [ (Nolabel, E.unit ~loc ()) ] in
     let pat_expr = E.pexp_apply ~loc ~f ~args () in
 
     [%stri
@@ -154,5 +162,95 @@ let gen ~loc ~flag ~args ~name ~body () =
         and [%p pat_name'] = [%e body]
 
         let [%p pat_name] =
-          [%e E.pexp_apply ~loc ~f:(E.pexp_lident ~loc name) ~args:unit ()]
+          [%e E.pexp_apply ~loc ~f:(E.pexp_lident ~loc (name ty)) ~args:unit ()]
       end]
+
+(** We wan't to recognize that kind of expression:
+
+    {[
+    include struct
+      let rec gen_something () = gen_something' 5
+      and gen_something' = ...
+
+      let gen_something = gen_something ()
+    end
+    ]}
+
+    But following pattern does not catch the expression for a unknown reason:
+    {[
+    [%stri
+      include struct
+        [%stri let rec [%p? _] = [%e? _]
+               and     [%p? _] = [%e? _]
+               
+               let [%? _] = [%e? _]]
+      end
+    ]}
+
+    The solution is to make the pattern by hand going throught the structure *)
+let stri_self_rec stri =
+  match stri.pstr_desc with
+  | Pstr_include { pincl_mod = { pmod_desc = Pmod_structure xs; _ }; _ } -> (
+      let n = List.length xs in
+      if n <> 2 then None
+      else
+        let x = List.hd xs in
+        let y = List.nth xs 1 in
+
+        match (x, y) with
+        | ( [%stri
+              let rec [%p? p] = [%e? e]
+
+              and [%p? p'] = [%e? e']],
+            [%stri let [%p? _] = [%e? _]] ) ->
+            Some [ (p, e); (p', e') ]
+        | _ -> None)
+  | _ -> None
+
+(** When a structure item is inside a mutual recursion definition,
+    by convention we change the signature from
+    {[ let f = .. ]}
+    to
+    {[ let f () = .. ]}
+
+    This function changes the signature when [f] does not contains
+    the suffix "'". *)
+let change_sig ~loc (pat, expr) =
+  let name = P.extract_pat_name_exn ~loc pat in
+  let n = String.length name - 1 in
+  let c = String.get name n in
+
+  if c = '\'' then (pat, expr)
+  else
+    match expr with
+    (* The expression already contains the fun () -> _ *)
+    | [%expr fun () -> [%e? _]] ->
+        (pat, expr) (* Otherwise we add the fun () -> _ *)
+    | _ -> (pat, [%expr fun () -> [%e expr]])
+
+let gens ~loc ~tys ~gens () =
+  let real_gens =
+    List.map
+      (fun x ->
+        let x = name x in
+        let pat_name = P.ppat_var ~loc x in
+        let f = E.pexp_lident ~loc x in
+        let unit = (Nolabel, E.unit ~loc ()) in
+
+        [%stri let [%p pat_name] = [%e E.pexp_apply ~loc ~f ~args:[ unit ] ()]])
+      tys
+  in
+
+  let vbs =
+    List.map
+      (function
+        | [%stri let [%p? pat] = [%e? body]] -> [ (pat, body) ]
+        | stri -> Option.fold ~none:[] ~some:(fun x -> x) @@ stri_self_rec stri)
+      gens
+    |> List.flatten
+    |> List.map (change_sig ~loc)
+    |> List.map (fun (pat, e) -> S.value_binding ~loc ~pat e)
+  in
+  let aux_gens = S.structure_item ~loc @@ Pstr_value (Recursive, vbs) in
+
+  S.str_include ~loc @@ aux_gens :: real_gens

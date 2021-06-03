@@ -35,9 +35,16 @@ module Primitive : sig
   (** Convert string name of type into QCheck arbitrary
 
       rec_types cover the special case where the generator is a recursive
-      function *)
+      function
+
+      tree_types cover the special case where the generator is a self recursive
+      function*)
   val from_string :
-    loc:location -> ?rec_types:string list -> string -> expression
+    loc:location ->
+    ?tree_types:string list ->
+    ?rec_types:string list ->
+    string ->
+    expression
 end
 
 (** Convert an applicated parametrizable type into a QCheck arbitrary 
@@ -61,9 +68,16 @@ val constr_type :
     - [ ] the type is an application, can that type happens ?
 
     rec_types cover the special case where the generator is a recursive
+    function
+
+    tree_types cover the special case where the generator is a self recursive
     function *)
 val from_longident :
-  loc:location -> ?rec_types:string list -> longident -> expression
+  loc:location ->
+  ?tree_types:string list ->
+  ?rec_types:string list ->
+  longident ->
+  expression
 
 (** Transform list of generators into a triple:
     
@@ -86,7 +100,7 @@ val nest_gens :
     This function has to be extracted from [record] because when trying to build
     a constructor using record, this expression needs the direct
     declaration of the record.
-    
+
     Example
     {[
     type t = A of { something : int }
@@ -242,13 +256,20 @@ val tree :
 
     let name args = body
 
-    if the flag is true, we add the recursive flag:
+    if there is a rec flag for the type, we add the recursive flag:
     let rec name args = body *)
 val gen :
   loc:location ->
-  flag:bool ->
+  rec_flags:string list ->
   args:pattern list ->
-  name:string ->
+  ty:string ->
   body:expression ->
+  unit ->
+  structure_item
+
+val gens :
+  loc:location ->
+  tys:string list ->
+  gens:structure_item list ->
   unit ->
   structure_item
