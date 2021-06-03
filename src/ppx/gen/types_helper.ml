@@ -138,14 +138,21 @@ let rec curry_args ~loc args body =
 let gen ~loc ~flag ~args ~name ~body () =
   let body = curry_args ~loc args body in
   let pat_name = P.ppat_var ~loc name in
-  let name' = name ^ "'" in
-  let pat_name' = P.ppat_var ~loc name' in
   if not flag then [%stri let [%p pat_name] = [%e body]]
   else
+    let name' = name ^ "'" in
+    let pat_name' = P.ppat_var ~loc name' in
     let f = E.pexp_lident ~loc name' in
     let args = [ (Nolabel, [%expr 5]) ] in
+    let unit = [ (Nolabel, [%expr ()]) ] in
     let pat_expr = E.pexp_apply ~loc ~f ~args () in
+
     [%stri
-      let [%p pat_name] =
-        let rec [%p pat_name'] = [%e body] in
-        [%e pat_expr]]
+      include struct
+        let rec [%p pat_name] = fun () -> [%e pat_expr]
+
+        and [%p pat_name'] = [%e body]
+
+        let [%p pat_name] =
+          [%e E.pexp_apply ~loc ~f:(E.pexp_lident ~loc name) ~args:unit ()]
+      end]
