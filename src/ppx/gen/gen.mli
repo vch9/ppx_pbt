@@ -29,15 +29,7 @@ open Ppxlib
 
 (** Transform a core_type into a QCheck.arbitrary
 
-    - [X] ident: int; string; char; ..
-
-    - [X] ident with arguments: list ; option; 'a type ..
-
-    - [X] tuple: ('a * 'b'); ('a * 'b * 'c); ..
-    
-    - [X] var: 'a t; 'a option; 'a list
-
-    When the rec_types contains types elements, that means they need to
+    When the tree_types contains types elements, that means they need to
     be an application of a generator
 
     A regular type would be translated to
@@ -46,21 +38,53 @@ open Ppxlib
     Meanwhile a recursive type
     {[ fun s -> gen_s (n - 1) ]}
     Recursives types contains only one argument: the fuel. It is always
-    called n *)
+    called n
+
+    When the rec_types contains types elements, that means they need to
+    be wrapped with an additional argument ()
+
+    The expression:
+    {[
+    let rec gen_expr = gen_expr' 5
+    and gen_expr' = function
+      | ..
+      | ..
+    and gen_value = gen_expr
+    ]}
+
+    is rejected because right-hand side of a 'let rec' definition doesn't
+    accept that kind of expression. The hack is here is to change the signatures
+    with an additional argument
+
+    {[
+    let rec gen_expr () = gen_expr' 5
+    and gen_expr' = function
+      | ..
+      | ..
+    and gen_value = gen_expr ()
+    ]}
+*)
 val from_core_type :
-  loc:location -> ?rec_types:string list -> core_type -> expression
+  loc:location ->
+  ?tree_types:string list ->
+  ?rec_types:string list ->
+  core_type ->
+  expression
 
 (** Transform a type kind into a QCheck.arbitrary
     
     - [X] type kind is a record, we use [from_record]
     - [X] type kind is a tuple, we use [from_record] *)
-val from_type_kind : loc:location -> ty:string -> type_kind -> expression
+val from_type_kind :
+  loc:location -> ?rec_types:string list -> ty:string -> type_kind -> expression
 
 (** Transform a record into a record QCheck.arbitrary *)
-val from_record : loc:location -> label_declaration list -> expression
+val from_record :
+  loc:location -> ?rec_types:string list -> label_declaration list -> expression
 
 (** Transform a tuple into a tuple QCheck.arbitrary *)
-val from_tuple : loc:location -> core_type list -> expression
+val from_tuple :
+  loc:location -> ?rec_types:string list -> core_type list -> expression
 
 (** Transform a Ptype_variant into a 'a QCheck.arbitrary
 
@@ -80,7 +104,11 @@ val from_tuple : loc:location -> core_type list -> expression
       We just have to chose one of the constructors built using
       {!from_constructor_decl}. *)
 val from_variant :
-  loc:location -> ty:string -> constructor_declaration list -> expression
+  loc:location ->
+  ?rec_types:string list ->
+  ty:string ->
+  constructor_declaration list ->
+  expression
 
 (** Transform a constructor declaration into a 'a QCheck.arbitrary
 
@@ -104,6 +132,7 @@ val from_variant :
     ?rec_types allows optional additional information to {!from_core_type} *)
 val from_constructor_decl :
   loc:location ->
+  ?tree_types:string list ->
   ?rec_types:string list ->
   constructor_declaration ->
   expression
@@ -115,7 +144,8 @@ val from_constructor_decl :
     - type_declaration.ptype_kind 
     
     TODO is this a xor ? *)
-val from_type_declaration : loc:location -> type_declaration -> structure_item
+val from_type_declaration :
+  loc:location -> ?rec_types:string list -> type_declaration -> structure_item
 
 (** Module entry point, returns the QCheck 'a QCheck.arbitrary *)
 val replace_stri :
