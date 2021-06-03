@@ -75,12 +75,10 @@ class mapper =
               let name = extract_name_from_pat f in
               List.map (Helpers.Info.update_name name) infos_pbt
             in
-            AH.Structure.pexp_include
-              ~loc
-              (stri :: Test.Tests.replace_pbt infos)
+            AH.Structure.str_include ~loc (stri :: Test.Tests.replace_pbt infos)
         (* type t = .. *)
         | { pstr_desc = Pstr_type _; _ } when n_gen > 0 ->
-            AH.Structure.pexp_include
+            AH.Structure.str_include
               ~loc
               [ stri; Gen.replace_stri infos_gen stri ]
         (* default cases *)

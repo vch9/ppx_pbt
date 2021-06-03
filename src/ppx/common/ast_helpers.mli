@@ -154,5 +154,5 @@ module Structure : sig
 
   val structure_item : ?loc:location -> structure_item_desc -> structure_item
 
-  val pexp_include : ?loc:location -> structure_item list -> structure_item
+  val str_include : ?loc:location -> structure_item list -> structure_item
 end

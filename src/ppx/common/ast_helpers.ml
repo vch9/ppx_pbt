@@ -153,7 +153,7 @@ module Structure = struct
     let loc = Default.loc loc in
     { pstr_desc = x; pstr_loc = loc }
 
-  let pexp_include ?loc xs =
+  let str_include ?loc xs =
     let loc' = Default.loc loc in
     let include_infos x =
       { pincl_mod = x; pincl_loc = loc'; pincl_attributes = [] }
