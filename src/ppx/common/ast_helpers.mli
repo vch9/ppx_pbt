@@ -135,6 +135,12 @@ module Pattern : sig
 
   (** Build a Ppat_any *)
   val ppat_any : ?loc:location -> unit -> pattern
+
+  (** Extract pattern name, returns None if the name can not be found *)
+  val extract_pat_name_opt : pattern -> string option
+
+  (** Extract pattern name, raises an exception if the name can not be found *)
+  val extract_pat_name_exn : loc:location -> pattern -> string
 end
 
 (* Helper module with builders for Ppxlib.Ast.Structure *)

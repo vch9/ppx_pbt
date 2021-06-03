@@ -126,6 +126,15 @@ module Pattern = struct
     @@ Ppat_var { txt = s; loc = default_loc }
 
   let ppat_any ?loc () = pattern ?loc @@ Ppat_any
+
+  let extract_pat_name_opt pat =
+    match pat.ppat_desc with Ppat_var { txt = s; _ } -> Some s | _ -> None
+
+  let extract_pat_name_exn ~loc pat =
+    match extract_pat_name_opt pat with
+    | Some s -> s
+    | None ->
+        Error.case_unsupported ~loc ~case:"Could not extract pattern name" ()
 end
 
 module Structure = struct
