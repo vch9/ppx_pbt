@@ -24,7 +24,7 @@ Payload is defined as follow:
 | _
 ```
 
-Exhaustive list of [property](https://gitlab.com/vch9/ppx_pbt/-/tree/dev/src/pbt/pbt.mli):
+Exhaustive list of [property](https://gitlab.com/vch9/ppx_pbt/-/tree/master/src/pbt/pbt.mli):
 ```
 commutative                [gen, gen]
 associative                [gen, gen, gen]
@@ -43,7 +43,7 @@ floored_right   {floor}    [gen]
 floored         {floor}    [gen]
 ```
 
-Exhaustive list of [gen](https://gitlab.com/vch9/ppx_pbt/-/tree/dev/src/pbt/pbt.mli):
+Exhaustive list of [gen](https://gitlab.com/vch9/ppx_pbt/-/tree/master/src/pbt/pbt.mli):
 ```
 int
 uint
