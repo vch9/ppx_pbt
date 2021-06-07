@@ -17,8 +17,8 @@ authors: [
 
 depends: [
   "dune" {>= "2.8.0"}
-  "ocaml" {>= "4.10.0"}
   "menhir" {>= "20180523"}
+  "ocaml" {>= "4.10.2"}
   "qcheck" {>= "0.17"}
   "metaquot" {>= "0.4"}
 ]
