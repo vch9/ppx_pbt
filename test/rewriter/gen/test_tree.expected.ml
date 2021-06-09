@@ -5,11 +5,11 @@ include struct
     let rec arb_tree () = arb_tree' 5
 
     and arb_tree' = function
-      | 0 -> QCheck.oneof [ QCheck.make @@ QCheck.Gen.return Leaf ]
+      | 0 -> QCheck.oneof [ QCheck.always Leaf ]
       | n ->
           QCheck.oneof
             [
-              QCheck.make @@ QCheck.Gen.return Leaf;
+              QCheck.always Leaf;
               QCheck.map
                 (fun (arb_0, (arb_1, arb_2)) -> Node (arb_0, arb_1, arb_2))
                 (QCheck.pair

@@ -3,10 +3,7 @@ include struct
 
   let arb_my_option arb_a =
     QCheck.oneof
-      [
-        QCheck.make @@ QCheck.Gen.return None;
-        QCheck.map (fun arb_0 -> Some arb_0) arb_a;
-      ]
+      [ QCheck.always None; QCheck.map (fun arb_0 -> Some arb_0) arb_a ]
 end
 
 include struct

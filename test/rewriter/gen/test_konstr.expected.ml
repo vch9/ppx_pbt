@@ -41,12 +41,7 @@ let pp_t3 = function
 include struct
   type t4 = Left | Right [@@arb]
 
-  let arb_t4 =
-    QCheck.oneof
-      [
-        QCheck.make @@ QCheck.Gen.return Left;
-        QCheck.make @@ QCheck.Gen.return Right;
-      ]
+  let arb_t4 = QCheck.oneof [ QCheck.always Left; QCheck.always Right ]
 end
 
 include struct

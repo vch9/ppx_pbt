@@ -132,7 +132,7 @@ let constructor ~loc ~kname ?kargs () =
   match kargs with
   | None ->
       let kname = E.pexp_construct ~loc ~kname ~kargs:None () in
-      [%expr QCheck.make @@ QCheck.Gen.return [%e kname]]
+      [%expr QCheck.always [%e kname]]
   | Some (pat, gens, expr) ->
       let expr = E.pexp_construct ~loc ~kname ~kargs:(Some expr) () in
       [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]]
