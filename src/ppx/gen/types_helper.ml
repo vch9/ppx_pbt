@@ -30,6 +30,7 @@ module P = Common.Ast_helpers.Pattern
 module S = Common.Ast_helpers.Structure
 module H = Common.Helpers
 module Pairs = Common.Helpers.Pairs
+module PP = Common.Pp
 
 let name s = match s with "t" -> "gen" | s -> Printf.sprintf "gen_%s" s
 
@@ -43,6 +44,8 @@ module Primitive = struct
     | "unit" -> [%expr QCheck.unit]
     | "option" -> [%expr QCheck.option]
     | "list" -> [%expr QCheck.list]
+    | "int64" -> [%expr QCheck.int64]
+    | "int32" -> [%expr QCheck.int32]
     | s ->
         let gen = E.pexp_lident ~loc @@ name s in
 
@@ -68,7 +71,16 @@ let constr_type ~loc ~f ~args () =
 
 let from_longident ~loc ?tree_types ?rec_types = function
   | Lident s -> Primitive.from_string ~loc ?tree_types ?rec_types s
-  | Ldot (lg, s) -> E.pexp_ident ~loc @@ H.mk_loc ~loc @@ Ldot (lg, name s)
+  | Ldot (lg, s) as x -> (
+      match PP.longident_to_str x with
+      | "Int64.t" -> [%expr QCheck.int64]
+      | "Int32.t" -> [%expr QCheck.int32]
+      | "Bytes.t" ->
+          [%expr
+            QCheck.map
+              (fun n -> Bytes.create n)
+              QCheck.(0 -- Sys.max_string_length)]
+      | _ -> E.pexp_ident ~loc @@ H.mk_loc ~loc @@ Ldot (lg, name s))
   | _ ->
       Error.case_unsupported
         ~loc
