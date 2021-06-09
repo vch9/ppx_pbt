@@ -42,6 +42,27 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
+ (targets test_equal.expected.format)
+ (deps (:pp pp.exe) (:input test_equal.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_equal.actual)
+ (deps (:pp pp.exe) (:input test_equal.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_equal.actual) (:expected test_equal.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_equal)
+ (modules test_equal)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
+
+(rule
  (targets test_konstr.expected.format)
  (deps (:pp pp.exe) (:input test_konstr.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))

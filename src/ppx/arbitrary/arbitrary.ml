@@ -24,7 +24,8 @@
 (*****************************************************************************)
 
 open Ppxlib
-module Info = Common.Helpers.Info
+module Helpers = Common.Helpers
+module Info = Helpers.Info
 module Error = Common.Error
 module T = Types_helper
 module P = Common.Ast_helpers.Pattern
@@ -148,10 +149,17 @@ and from_constructor_decl ~loc ?tree_types ?rec_types x =
 let from_type_declaration ~loc ?rec_types td =
   let ty = td.ptype_name.txt in
 
+  let type_kind =
+    Helpers.opt (fun () -> from_type_kind ~loc ?rec_types ~ty td.ptype_kind)
+  in
   let body =
-    match td.ptype_manifest with
-    | None -> from_type_kind ~loc ?rec_types ~ty td.ptype_kind
-    | Some ct -> from_core_type ~loc ?rec_types ct
+    match (td.ptype_manifest, type_kind) with
+    (* We consider that type_kind contains the type information, and we take it
+       over type_manifest *)
+    | (_, Some x) -> x
+    | (Some ct, None) -> from_core_type ~loc ?rec_types ct
+    | _ -> assert false
+    (* Can that case happens ? *)
   in
 
   let args = extract_args ~loc td.ptype_params in
