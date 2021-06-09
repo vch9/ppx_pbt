@@ -31,7 +31,7 @@ module S = Common.Ast_helpers.Structure
 module H = Common.Helpers
 module Pairs = Common.Helpers.Pairs
 
-let name s = Printf.sprintf "gen_%s" s
+let name s = match s with "t" -> "gen" | s -> Printf.sprintf "gen_%s" s
 
 module Primitive = struct
   let from_string ~loc ?tree_types ?rec_types = function

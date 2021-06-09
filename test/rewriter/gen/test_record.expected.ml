@@ -1,7 +1,7 @@
 include struct
   type t = { a : int; b : string } [@@gen]
 
-  let gen_t =
+  let gen =
     QCheck.map
       (fun (gen_0, gen_1) -> { a = gen_0; b = gen_1 })
       (QCheck.pair QCheck.int QCheck.string)
@@ -22,7 +22,7 @@ include struct
   let gen_t2 =
     QCheck.oneof
       [
-        QCheck.map (fun gen_0 -> A gen_0) gen_t;
+        QCheck.map (fun gen_0 -> A gen_0) gen;
         QCheck.map
           (fun (gen_0, gen_1) -> B { left = gen_0; right = gen_1 })
           (QCheck.pair QCheck.int QCheck.int);
