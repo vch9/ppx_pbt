@@ -106,12 +106,12 @@ module Pairs = struct
         let right = nested_pairs_to_list y in
         left @ right
 
-  let names_from_gens gens =
+  let names_from_gens f gens =
     let id = ref 0 in
     let create_fresh_name i =
       let x = !i in
       i := !i + 1 ;
-      "gen_" ^ string_of_int x
+      f @@ string_of_int x
     in
     (* Replace_by_id replace the generators pattern by identifiers refering to the
        function pattern *)
@@ -128,7 +128,7 @@ module Pairs = struct
     in
     replace_by_id gens
 
-  let pattern_from_gens loc gens =
+  let pattern_from_gens loc f gens =
     let rec create_pattern loc = function
       | Pair (x, y) ->
           [%pat? ([%p create_pattern loc x], [%p create_pattern loc y])]
@@ -138,6 +138,6 @@ module Pairs = struct
           Ppat_tuple [ arg_x; arg_y ] |> P.pattern ~loc
       | Simple x -> P.ppat_var ~loc x
     in
-    let args = names_from_gens gens in
+    let args = names_from_gens f gens in
     (create_pattern loc args, args)
 end

@@ -70,12 +70,18 @@ module Pairs : sig
   (** Transforms nested pairs of 'a into a list of 'a, roundtrip with [nest_generators] *)
   val nested_pairs_to_list : 'a nested_pairs -> 'a list
 
-  (** Associate a unique name to the nested generators *)
-  val names_from_gens : 'a nested_pairs -> string nested_pairs
+  (** [names_from_gens f gens] creates unique name for the [gens]
 
-  (** Create a pattern from the nested generators names,
-    it also returns the generators from [names_from_gens] in order
+      The name is created using [f] applied on the fresh integer identifier *)
+  val names_from_gens :
+    (string -> string) -> 'a nested_pairs -> string nested_pairs
+
+  (** [patterns_from_gens loc f gens] creates a pattern from [gens],
+    it also returns the generators names from [names_from_gens f gens] in order
     to be used afterward *)
   val pattern_from_gens :
-    location -> 'a nested_pairs -> pattern * string nested_pairs
+    location ->
+    (string -> string) ->
+    'a nested_pairs ->
+    pattern * string nested_pairs
 end

@@ -90,7 +90,7 @@ let from_longident ~loc ?tree_types ?rec_types = function
 let nest_gens ~loc gens =
   let open Pairs in
   let gens = nest_generators gens in
-  let (pat, gens_name) = pattern_from_gens loc gens in
+  let (pat, gens_name) = pattern_from_gens loc (fun x -> "arb_" ^ x) gens in
   let gens = nested_pairs_to_expr loc gens in
   let gens_name = nested_pairs_to_list gens_name in
 
