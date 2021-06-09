@@ -31,6 +31,8 @@ let mk_loc ?loc x =
   | None -> { txt = x; loc = Location.none }
   | Some loc -> { txt = x; loc }
 
+let opt f = try Some (f ()) with _ -> None
+
 module Info = struct
   type t = {
     stri_name : string;

@@ -29,6 +29,9 @@ open Ppxlib
 
 val mk_loc : ?loc:location -> 'a -> 'a loc
 
+(** [opt f] evaluates [f], if an exception is raised returns None *)
+val opt : (unit -> 'a) -> 'a option
+
 module Info : sig
   (** Information attached to a structure_item inside a record *)
   type t
