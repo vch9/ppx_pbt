@@ -32,7 +32,7 @@ module H = Common.Helpers
 module Pairs = Common.Helpers.Pairs
 module PP = Common.Pp
 
-let name s = match s with "t" -> "gen" | s -> Printf.sprintf "gen_%s" s
+let name s = match s with "t" -> "arb" | s -> Printf.sprintf "arb_%s" s
 
 module Primitive = struct
   let from_string ~loc ?tree_types ?rec_types = function
@@ -47,9 +47,9 @@ module Primitive = struct
     | "int64" -> [%expr QCheck.int64]
     | "int32" -> [%expr QCheck.int32]
     | s ->
-        let gen = E.pexp_lident ~loc @@ name s in
+        let arb = E.pexp_lident ~loc @@ name s in
 
-        let gen_opt =
+        let arb_opt =
           match (tree_types, rec_types) with
           | (Some xs, _) when List.mem s xs ->
               Some
@@ -59,10 +59,10 @@ module Primitive = struct
                    ~args:[ (Nolabel, [%expr n - 1]) ]
                    ())
           | (_, Some xs) when List.mem s xs ->
-              Some (E.pexp_apply ~loc ~f:gen ~args:[ (Nolabel, [%expr ()]) ] ())
+              Some (E.pexp_apply ~loc ~f:arb ~args:[ (Nolabel, [%expr ()]) ] ())
           | _ -> None
         in
-        Option.fold ~none:gen ~some:(fun x -> x) gen_opt
+        Option.fold ~none:arb ~some:(fun x -> x) arb_opt
 end
 
 let constr_type ~loc ~f ~args () =

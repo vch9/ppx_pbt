@@ -4,4 +4,4 @@ type expr =
   | Eq of expr * expr
   | Lt of expr * expr
 
-and value = Bool of bool | Int of int [@@gen]
+and value = Bool of bool | Int of int [@@arb]

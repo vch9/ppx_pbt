@@ -2,7 +2,7 @@
  (name ppx_pbt)
  (public_name ppx_pbt.ppx_pbt)
  (kind ppx_rewriter)
- (libraries ppxlib menhirLib qcheck common test gen)
+ (libraries ppxlib menhirLib qcheck common test arbitrary)
  (ppx_runtime_libraries ppx_pbt.pbt ppx_pbt.runner)
  (preprocess (pps ppxlib.metaquot))
  (inline_tests.backend

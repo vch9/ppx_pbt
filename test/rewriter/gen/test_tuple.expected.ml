@@ -1,39 +1,39 @@
 include struct
-  type two = int * string [@@gen]
+  type two = int * string [@@arb]
 
-  let gen_two =
+  let arb_two =
     QCheck.map
-      (fun (gen_0, gen_1) -> (gen_0, gen_1))
+      (fun (arb_0, arb_1) -> (arb_0, arb_1))
       (QCheck.pair QCheck.int QCheck.string)
 end
 
 include struct
-  type three = int * string * char [@@gen]
+  type three = int * string * char [@@arb]
 
-  let gen_three =
+  let arb_three =
     QCheck.map
-      (fun (gen_0, (gen_1, gen_2)) -> (gen_0, gen_1, gen_2))
+      (fun (arb_0, (arb_1, arb_2)) -> (arb_0, arb_1, arb_2))
       (QCheck.pair QCheck.int (QCheck.pair QCheck.string QCheck.char))
 end
 
 include struct
-  type four = int * string * char * float [@@gen]
+  type four = int * string * char * float [@@arb]
 
-  let gen_four =
+  let arb_four =
     QCheck.map
-      (fun ((gen_0, gen_1), (gen_2, gen_3)) -> (gen_0, gen_1, gen_2, gen_3))
+      (fun ((arb_0, arb_1), (arb_2, arb_3)) -> (arb_0, arb_1, arb_2, arb_3))
       (QCheck.pair
          (QCheck.pair QCheck.int QCheck.string)
          (QCheck.pair QCheck.char QCheck.float))
 end
 
 include struct
-  type five = int * string * char * float * unit [@@gen]
+  type five = int * string * char * float * unit [@@arb]
 
-  let gen_five =
+  let arb_five =
     QCheck.map
-      (fun (gen_0, ((gen_1, gen_2), (gen_3, gen_4))) ->
-        (gen_0, gen_1, gen_2, gen_3, gen_4))
+      (fun (arb_0, ((arb_1, arb_2), (arb_3, arb_4))) ->
+        (arb_0, arb_1, arb_2, arb_3, arb_4))
       (QCheck.pair
          QCheck.int
          (QCheck.pair
@@ -42,12 +42,12 @@ include struct
 end
 
 include struct
-  type six = int * string * char * float * unit * unit [@@gen]
+  type six = int * string * char * float * unit * unit [@@arb]
 
-  let gen_six =
+  let arb_six =
     QCheck.map
-      (fun ((gen_0, (gen_1, gen_2)), (gen_3, (gen_4, gen_5))) ->
-        (gen_0, gen_1, gen_2, gen_3, gen_4, gen_5))
+      (fun ((arb_0, (arb_1, arb_2)), (arb_3, (arb_4, arb_5))) ->
+        (arb_0, arb_1, arb_2, arb_3, arb_4, arb_5))
       (QCheck.pair
          (QCheck.pair QCheck.int (QCheck.pair QCheck.string QCheck.char))
          (QCheck.pair QCheck.float (QCheck.pair QCheck.unit QCheck.unit)))

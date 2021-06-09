@@ -32,7 +32,7 @@ module AH = Common.Ast_helpers
 
 let pbt_name = "pbt"
 
-let gen_name = "gen"
+let gen_name = "arb"
 
 let ignore = ref false
 
@@ -80,7 +80,7 @@ class mapper =
         | { pstr_desc = Pstr_type _; _ } when n_gen > 0 ->
             AH.Structure.str_include
               ~loc
-              [ stri; Gen.replace_stri infos_gen stri ]
+              [ stri; Arbitrary.replace_stri infos_gen stri ]
         (* default cases *)
         | x -> super#structure_item x
       in

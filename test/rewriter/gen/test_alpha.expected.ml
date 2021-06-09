@@ -1,38 +1,38 @@
 include struct
-  type 'a t1 = 'a [@@gen]
+  type 'a t1 = 'a [@@arb]
 
-  let gen_t1 gen_a = gen_a
+  let arb_t1 arb_a = arb_a
 end
 
 include struct
-  type 'a t2 = 'a list [@@gen]
+  type 'a t2 = 'a list [@@arb]
 
-  let gen_t2 gen_a = QCheck.list gen_a
+  let arb_t2 arb_a = QCheck.list arb_a
 end
 
 include struct
-  type 'a t3 = A of 'a [@@gen]
+  type 'a t3 = A of 'a [@@arb]
 
-  let gen_t3 gen_a = QCheck.oneof [ QCheck.map (fun gen_0 -> A gen_0) gen_a ]
+  let arb_t3 arb_a = QCheck.oneof [ QCheck.map (fun arb_0 -> A arb_0) arb_a ]
 end
 
 include struct
-  type ('a, 'b) t4 = A of 'a * 'b [@@gen]
+  type ('a, 'b) t4 = A of 'a * 'b [@@arb]
 
-  let gen_t4 gen_a gen_b =
+  let arb_t4 arb_a arb_b =
     QCheck.oneof
       [
         QCheck.map
-          (fun (gen_0, gen_1) -> A (gen_0, gen_1))
-          (QCheck.pair gen_a gen_b);
+          (fun (arb_0, arb_1) -> A (arb_0, arb_1))
+          (QCheck.pair arb_a arb_b);
       ]
 end
 
 include struct
-  type ('left, 'right) t5 = 'left * 'right [@@gen]
+  type ('left, 'right) t5 = 'left * 'right [@@arb]
 
-  let gen_t5 gen_left gen_right =
+  let arb_t5 arb_left arb_right =
     QCheck.map
-      (fun (gen_0, gen_1) -> (gen_0, gen_1))
-      (QCheck.pair gen_left gen_right)
+      (fun (arb_0, arb_1) -> (arb_0, arb_1))
+      (QCheck.pair arb_left arb_right)
 end

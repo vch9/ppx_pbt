@@ -1,23 +1,23 @@
 include struct
-  type tree = Leaf | Node of int * tree * tree [@@gen]
+  type tree = Leaf | Node of int * tree * tree [@@arb]
 
   include struct
-    let rec gen_tree () = gen_tree' 5
+    let rec arb_tree () = arb_tree' 5
 
-    and gen_tree' = function
+    and arb_tree' = function
       | 0 -> QCheck.oneof [ QCheck.make @@ QCheck.Gen.return Leaf ]
       | n ->
           QCheck.oneof
             [
               QCheck.make @@ QCheck.Gen.return Leaf;
               QCheck.map
-                (fun (gen_0, (gen_1, gen_2)) -> Node (gen_0, gen_1, gen_2))
+                (fun (arb_0, (arb_1, arb_2)) -> Node (arb_0, arb_1, arb_2))
                 (QCheck.pair
                    QCheck.int
-                   (QCheck.pair (gen_tree' (n - 1)) (gen_tree' (n - 1))));
+                   (QCheck.pair (arb_tree' (n - 1)) (arb_tree' (n - 1))));
             ]
 
-    let gen_tree = gen_tree ()
+    let arb_tree = arb_tree ()
   end
 end
 
@@ -27,30 +27,30 @@ include struct
     | If of expr * expr * expr
     | Eq of expr * expr
     | Lt of expr * expr
-  [@@gen]
+  [@@arb]
 
   include struct
-    let rec gen_expr () = gen_expr' 5
+    let rec arb_expr () = arb_expr' 5
 
-    and gen_expr' = function
-      | 0 -> QCheck.oneof [ QCheck.map (fun gen_0 -> Value gen_0) QCheck.int ]
+    and arb_expr' = function
+      | 0 -> QCheck.oneof [ QCheck.map (fun arb_0 -> Value arb_0) QCheck.int ]
       | n ->
           QCheck.oneof
             [
-              QCheck.map (fun gen_0 -> Value gen_0) QCheck.int;
+              QCheck.map (fun arb_0 -> Value arb_0) QCheck.int;
               QCheck.map
-                (fun (gen_0, (gen_1, gen_2)) -> If (gen_0, gen_1, gen_2))
+                (fun (arb_0, (arb_1, arb_2)) -> If (arb_0, arb_1, arb_2))
                 (QCheck.pair
-                   (gen_expr' (n - 1))
-                   (QCheck.pair (gen_expr' (n - 1)) (gen_expr' (n - 1))));
+                   (arb_expr' (n - 1))
+                   (QCheck.pair (arb_expr' (n - 1)) (arb_expr' (n - 1))));
               QCheck.map
-                (fun (gen_0, gen_1) -> Eq (gen_0, gen_1))
-                (QCheck.pair (gen_expr' (n - 1)) (gen_expr' (n - 1)));
+                (fun (arb_0, arb_1) -> Eq (arb_0, arb_1))
+                (QCheck.pair (arb_expr' (n - 1)) (arb_expr' (n - 1)));
               QCheck.map
-                (fun (gen_0, gen_1) -> Lt (gen_0, gen_1))
-                (QCheck.pair (gen_expr' (n - 1)) (gen_expr' (n - 1)));
+                (fun (arb_0, arb_1) -> Lt (arb_0, arb_1))
+                (QCheck.pair (arb_expr' (n - 1)) (arb_expr' (n - 1)));
             ]
 
-    let gen_expr = gen_expr ()
+    let arb_expr = arb_expr ()
   end
 end

@@ -1,30 +1,30 @@
 include struct
-  type t = { a : int; b : string } [@@gen]
+  type t = { a : int; b : string } [@@arb]
 
-  let gen =
+  let arb =
     QCheck.map
-      (fun (gen_0, gen_1) -> { a = gen_0; b = gen_1 })
+      (fun (arb_0, arb_1) -> { a = arb_0; b = arb_1 })
       (QCheck.pair QCheck.int QCheck.string)
 end
 
 include struct
-  type mutable_t = { mutable a : int; mutable b : string } [@@gen]
+  type mutable_t = { mutable a : int; mutable b : string } [@@arb]
 
-  let gen_mutable_t =
+  let arb_mutable_t =
     QCheck.map
-      (fun (gen_0, gen_1) -> { a = gen_0; b = gen_1 })
+      (fun (arb_0, arb_1) -> { a = arb_0; b = arb_1 })
       (QCheck.pair QCheck.int QCheck.string)
 end
 
 include struct
-  type t2 = A of t | B of { left : int; right : int } [@@gen]
+  type t2 = A of t | B of { left : int; right : int } [@@arb]
 
-  let gen_t2 =
+  let arb_t2 =
     QCheck.oneof
       [
-        QCheck.map (fun gen_0 -> A gen_0) gen;
+        QCheck.map (fun arb_0 -> A arb_0) arb;
         QCheck.map
-          (fun (gen_0, gen_1) -> B { left = gen_0; right = gen_1 })
+          (fun (arb_0, arb_1) -> B { left = arb_0; right = arb_1 })
           (QCheck.pair QCheck.int QCheck.int);
       ]
 end

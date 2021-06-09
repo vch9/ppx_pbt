@@ -1,22 +1,22 @@
 include struct
-  type 'a my_option = None | Some of 'a [@@gen]
+  type 'a my_option = None | Some of 'a [@@arb]
 
-  let gen_my_option gen_a =
+  let arb_my_option arb_a =
     QCheck.oneof
       [
         QCheck.make @@ QCheck.Gen.return None;
-        QCheck.map (fun gen_0 -> Some gen_0) gen_a;
+        QCheck.map (fun arb_0 -> Some arb_0) arb_a;
       ]
 end
 
 include struct
-  type t1 = int my_option [@@gen]
+  type t1 = int my_option [@@arb]
 
-  let gen_t1 = gen_my_option QCheck.int
+  let arb_t1 = arb_my_option QCheck.int
 end
 
 include struct
-  type t2 = int option [@@gen]
+  type t2 = int option [@@arb]
 
-  let gen_t2 = QCheck.option QCheck.int
+  let arb_t2 = QCheck.option QCheck.int
 end

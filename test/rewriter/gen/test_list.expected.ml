@@ -1,16 +1,16 @@
 include struct
-  type t1 = string list [@@gen]
+  type t1 = string list [@@arb]
 
-  let gen_t1 = QCheck.list QCheck.string
+  let arb_t1 = QCheck.list QCheck.string
 end
 
 include struct
-  type t2 = A of string list | B of int list [@@gen]
+  type t2 = A of string list | B of int list [@@arb]
 
-  let gen_t2 =
+  let arb_t2 =
     QCheck.oneof
       [
-        QCheck.map (fun gen_0 -> A gen_0) (QCheck.list QCheck.string);
-        QCheck.map (fun gen_0 -> B gen_0) (QCheck.list QCheck.int);
+        QCheck.map (fun arb_0 -> A arb_0) (QCheck.list QCheck.string);
+        QCheck.map (fun arb_0 -> B arb_0) (QCheck.list QCheck.int);
       ]
 end

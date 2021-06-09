@@ -1,26 +1,26 @@
 module SomeModule = struct
   include struct
-    type t = int [@@gen]
+    type t = int [@@arb]
 
-    let gen = QCheck.int
+    let arb = QCheck.int
   end
 
   module SomeOtherModule = struct
     include struct
-      type t = float [@@gen]
+      type t = float [@@arb]
 
-      let gen = QCheck.float
+      let arb = QCheck.float
     end
   end
 end
 
 include struct
-  type t = Int of SomeModule.t | Float of SomeModule.SomeOtherModule.t [@@gen]
+  type t = Int of SomeModule.t | Float of SomeModule.SomeOtherModule.t [@@arb]
 
-  let gen =
+  let arb =
     QCheck.oneof
       [
-        QCheck.map (fun gen_0 -> Int gen_0) SomeModule.gen;
-        QCheck.map (fun gen_0 -> Float gen_0) SomeModule.SomeOtherModule.gen;
+        QCheck.map (fun arb_0 -> Int arb_0) SomeModule.arb;
+        QCheck.map (fun arb_0 -> Float arb_0) SomeModule.SomeOtherModule.arb;
       ]
 end

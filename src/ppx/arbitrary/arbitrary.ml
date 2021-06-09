@@ -35,7 +35,7 @@ let rec_flags = ref []
 let extract_args ~loc params =
   let to_pat (ct, _) =
     match ct.ptyp_desc with
-    | Ptyp_var s -> P.ppat_var ~loc @@ "gen_" ^ s
+    | Ptyp_var s -> P.ppat_var ~loc @@ "arb_" ^ s
     | _ -> Error.case_unsupported ~loc ~case:"Ppx.Gen.gen.extract_args" ()
   in
   List.map to_pat params
