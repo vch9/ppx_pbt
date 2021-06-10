@@ -104,22 +104,37 @@ let rec from_core_type ~loc ?tree_types ?rec_types ~ty ct =
       from_ptyp_variant ~loc ?tree_types ?rec_types ~ty (x, y, z)
   | _ -> Error.case_unsupported ~loc ~case:"Ppx.Gen.Types.from_core_type" ()
 
-(** [from_ptyp_variant] is not the same as [from_variant] *)
+(* [from_ptyp_variant] is not the same as [from_variant] *)
 and from_ptyp_variant ~loc ?tree_types ?rec_types ~ty (rws, _, _) =
-  if is_recursive_row_fields ~loc ~ty rws then failwith "TODO rec ptyp_variant"
-  else
-    let l =
-      List.map
-        (fun rw ->
-          match rw.prf_desc with
-          | Rtag ({ txt; _ }, _, cts) ->
-              ( txt,
-                List.map (from_core_type ~loc ?tree_types ?rec_types ~ty) cts )
-          | _ -> assert false
-          (* If we get here, an exception should already have been raised *))
-        rws
+  (* Transforms a row_field to the pair (variant name, generators) *)
+  let to_expr f rw =
+    match rw.prf_desc with
+    | Rtag ({ txt; _ }, _, cts) -> (txt, List.map f cts)
+    | _ -> assert false
+    (* If we get here, an exception should already have been raised *)
+  in
+
+  (* Standart transformation from core_type to generators *)
+  let basic x = from_core_type ~loc ?tree_types ?rec_types ~ty x in
+
+  if is_recursive_row_fields ~loc ~ty rws then (
+    let is_leave x = not @@ is_recursive_row_field ~loc ~ty x in
+    let leaves =
+      List.filter is_leave rws
+      |> List.map (to_expr basic)
+      |> T.variants ~loc ~ty
     in
-    T.variants ~loc ~ty l
+    let nodes =
+      let tree_types' =
+        Option.fold ~none:[ ty ] ~some:(fun x -> ty :: x) tree_types
+        |> Option.some
+      in
+      let f = from_core_type ~loc ?tree_types:tree_types' ?rec_types ~ty in
+      List.map (to_expr f) rws |> T.variants ~loc ~ty
+    in
+    rec_flags := ty :: !rec_flags ;
+    T.tree' ~loc ~leaves ~nodes ())
+  else List.map (to_expr basic) rws |> T.variants ~loc ~ty
 
 and from_type_kind ~loc ?rec_types ~ty = function
   | Ptype_record xs -> from_record ~loc ?rec_types ~ty xs
@@ -155,7 +170,7 @@ and from_variant ~loc ?rec_types ~ty xs =
 
     rec_flags := ty :: !rec_flags ;
 
-    T.tree ~loc ~ty ~leaves ~nodes ())
+    T.tree ~loc ~leaves ~nodes ())
   else
     let gens = List.map (from_constructor_decl ~loc ?rec_types ~ty) xs in
     T.constructors ~loc gens
