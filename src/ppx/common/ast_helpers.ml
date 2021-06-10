@@ -105,6 +105,35 @@ module Expression = struct
 
   let pexp_record ?loc ?loc_stack ?attributes ~fields x =
     expression ?loc ?loc_stack ?attributes @@ Pexp_record (fields, x)
+
+  let pexp_variant ?loc ?loc_stack ?attributes ~label x =
+    expression ?loc ?loc_stack ?attributes @@ Pexp_variant (label, x)
+
+  let pexp_constraint ?loc ?loc_stack ?attributes e ct =
+    expression ?loc ?loc_stack ?attributes @@ Pexp_constraint (e, ct)
+end
+
+module Type = struct
+  let core_type ?loc ?loc_stack ?attributes desc =
+    let loc_stack = Default.loc_stack loc_stack in
+    let attributes = Default.attributes attributes in
+    let loc = Default.loc loc in
+
+    {
+      ptyp_desc = desc;
+      ptyp_loc = loc;
+      ptyp_loc_stack = loc_stack;
+      ptyp_attributes = attributes;
+    }
+
+  let constr_one ?loc ?loc_stack ?attributes x y =
+    let loc' = Default.loc loc in
+    let x_lgloc = { loc = loc'; txt = x } in
+    let y_lgloc = { loc = loc'; txt = y } in
+    let y =
+      core_type ?loc ?loc_stack ?attributes @@ Ptyp_constr (y_lgloc, [])
+    in
+    core_type ?loc ?loc_stack ?attributes @@ Ptyp_constr (x_lgloc, [ y ])
 end
 
 module Pattern = struct

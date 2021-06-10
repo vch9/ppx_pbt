@@ -114,6 +114,47 @@ module Expression : sig
     fields:(longident_loc * expression) list ->
     expression option ->
     expression
+
+  (** Build a Pexp_variant *)
+  val pexp_variant :
+    ?loc:location ->
+    ?loc_stack:location_stack ->
+    ?attributes:attributes ->
+    label:string ->
+    expression option ->
+    expression
+
+  val pexp_constraint :
+    ?loc:location ->
+    ?loc_stack:location_stack ->
+    ?attributes:attributes ->
+    expression ->
+    core_type ->
+    expression
+end
+
+(* Helper module with builders for Ppxlib.Ast.core_type *)
+module Type : sig
+  val core_type :
+    ?loc:location ->
+    ?loc_stack:location_stack ->
+    ?attributes:attributes ->
+    core_type_desc ->
+    core_type
+
+  (** [constr_one x y] build a special kind of Ptyp_constr
+
+      example:
+      x <- 'a
+      y <- t
+      [constr_one 'a t] => 'a t *)
+  val constr_one :
+    ?loc:location ->
+    ?loc_stack:location_stack ->
+    ?attributes:attributes ->
+    longident ->
+    longident ->
+    core_type
 end
 
 (* Helper module with builders for Ppxlib.Ast.pattern *)
