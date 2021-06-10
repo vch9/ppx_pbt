@@ -5,4 +5,4 @@ val add_tests : QCheck.Test.t list -> unit
 (** Add a list of generated test to the test suite *)
 
 val run : unit -> unit
-(** Run the generated tests using QCheck_runner*)
+(** Run the generated tests using Alcotest runner *)

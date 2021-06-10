@@ -23,6 +23,7 @@ depends: [
   "metaquot" {>= "0.4"}
   "data-encoding"
   "zarith"
+  "qcheck-alcotest"
 ]
 
 build: ["dune" "build" "-p" name "-j" jobs]
