@@ -138,9 +138,11 @@ let constructor ~loc ~kname ?kargs () =
       let expr = E.pexp_construct ~loc ~kname ~kargs:(Some expr) () in
       [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]]
 
-let tree ~loc ~ty ~leaves ~nodes () =
-  let _ = ty in
+let tree' ~loc ~leaves ~nodes () =
+  let rec_gen = [%expr function 0 -> [%e leaves] | n -> [%e nodes]] in
+  rec_gen
 
+let tree ~loc ~leaves ~nodes () =
   let leaves = E.pexp_list ~loc leaves and nodes = E.pexp_list ~loc nodes in
 
   let rec_gen =
@@ -149,18 +151,19 @@ let tree ~loc ~ty ~leaves ~nodes () =
   in
   rec_gen
 
+let variants' ~loc xs =
+  List.map
+    (fun (label, gens) ->
+      match gens with
+      | [] -> [%expr QCheck.always [%e E.pexp_variant ~loc ~label None]]
+      | gens ->
+          let (pat, gens, tuple) = tuple' ~loc gens in
+          let expr = E.pexp_variant ~loc ~label @@ Some tuple in
+          [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]])
+    xs
+
 let variants ~loc ~ty xs =
-  let xs =
-    List.map
-      (fun (label, gens) ->
-        match gens with
-        | [] -> [%expr QCheck.always [%e E.pexp_variant ~loc ~label None]]
-        | gens ->
-            let (pat, gens, tuple) = tuple' ~loc gens in
-            let expr = E.pexp_variant ~loc ~label @@ Some tuple in
-            [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]])
-      xs
-  in
+  let xs = variants' ~loc xs in
   (* OCaml can not easily generalize types of ptyp_variants, we help the typer
      with an annotation *)
   let exp = constructors ~loc xs in

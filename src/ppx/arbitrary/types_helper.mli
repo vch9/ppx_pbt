@@ -217,6 +217,12 @@ val constructor :
   unit ->
   expression
 
+(** [tree' loc leaves nodes ()] is almost the same function as {!tree'}
+    the only difference is that QCheck.oneof is already applied to leaves and
+    nodes *)
+val tree' :
+  loc:location -> leaves:expression -> nodes:expression -> unit -> expression
+
 (** Convert a tree type like into a recursive generator expression
 
     The recursive generator uses a fuel, we could imagine that in future work
@@ -234,7 +240,7 @@ val constructor :
       | n ->
         oneof
           [
-            make @@ Gen.return Leaf;
+            always Leaf;
             map
               (fun (gen_0, (gen_1, gen_2)) -> Node (gen_0, gen_1, gen_2))
               (pair int
@@ -246,7 +252,6 @@ val constructor :
  *)
 val tree :
   loc:location ->
-  ty:string ->
   leaves:expression list ->
   nodes:expression list ->
   unit ->
