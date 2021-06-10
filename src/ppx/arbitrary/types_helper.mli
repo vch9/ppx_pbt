@@ -252,6 +252,13 @@ val tree :
   unit ->
   expression
 
+(** [variants loc ty xs] create a QCheck.arbitrary using [xs] to produce
+    Ptyp_variant _ list. We also require [ty] to constraint the expression
+    to a {[ t QCheck.arbitrary ]} where {[ t ]} is the current type we
+    are deriving *)
+val variants :
+  loc:location -> ty:string -> (string * expression list) list -> expression
+
 (** Create a QCheck.arbitrary using args name and body
 
     let name args = body

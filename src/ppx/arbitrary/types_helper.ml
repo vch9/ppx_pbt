@@ -28,6 +28,7 @@ module Error = Common.Error
 module E = Common.Ast_helpers.Expression
 module P = Common.Ast_helpers.Pattern
 module S = Common.Ast_helpers.Structure
+module T = Common.Ast_helpers.Type
 module H = Common.Helpers
 module Pairs = Common.Helpers.Pairs
 module PP = Common.Pp
@@ -147,6 +148,27 @@ let tree ~loc ~ty ~leaves ~nodes () =
       function 0 -> QCheck.oneof [%e leaves] | n -> QCheck.oneof [%e nodes]]
   in
   rec_gen
+
+let variants ~loc ~ty xs =
+  let xs =
+    List.map
+      (fun (label, gens) ->
+        match gens with
+        | [] -> [%expr QCheck.always [%e E.pexp_variant ~loc ~label None]]
+        | gens ->
+            let (pat, gens, tuple) = tuple' ~loc gens in
+            let expr = E.pexp_variant ~loc ~label @@ Some tuple in
+            [%expr QCheck.map (fun [%p pat] -> [%e expr]) [%e gens]])
+      xs
+  in
+  (* OCaml can not easily generalize types of ptyp_variants, we help the typer
+     with an annotation *)
+  let exp = constructors ~loc xs in
+  let annotation =
+    T.constr_one ~loc (Ldot (Lident "QCheck", "arbitrary")) (Lident ty)
+  in
+
+  E.pexp_constraint ~loc exp annotation
 
 let rec curry_args ~loc args body =
   match args with
