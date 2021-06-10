@@ -229,3 +229,24 @@
  (modules test_tuple)
  (libraries zarith data-encoding)
  (preprocess (pps ppx_pbt)))
+
+(rule
+ (targets test_variant.expected.format)
+ (deps (:pp pp.exe) (:input test_variant.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_variant.actual)
+ (deps (:pp pp.exe) (:input test_variant.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_variant.actual) (:expected test_variant.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_variant)
+ (modules test_variant)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
