@@ -68,6 +68,7 @@ val from_core_type :
   loc:location ->
   ?tree_types:string list ->
   ?rec_types:string list ->
+  ty:string ->
   core_type ->
   expression
 
@@ -80,11 +81,19 @@ val from_type_kind :
 
 (** Transform a record into a record QCheck.arbitrary *)
 val from_record :
-  loc:location -> ?rec_types:string list -> label_declaration list -> expression
+  loc:location ->
+  ?rec_types:string list ->
+  ty:string ->
+  label_declaration list ->
+  expression
 
 (** Transform a tuple into a tuple QCheck.arbitrary *)
 val from_tuple :
-  loc:location -> ?rec_types:string list -> core_type list -> expression
+  loc:location ->
+  ?rec_types:string list ->
+  ty:string ->
+  core_type list ->
+  expression
 
 (** Transform a Ptype_variant into a 'a QCheck.arbitrary
 
@@ -134,6 +143,7 @@ val from_constructor_decl :
   loc:location ->
   ?tree_types:string list ->
   ?rec_types:string list ->
+  ty:string ->
   constructor_declaration ->
   expression
 

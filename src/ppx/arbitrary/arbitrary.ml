@@ -78,33 +78,64 @@ and is_recursive_core_type ~loc ~ty ct =
   | Ptyp_constr ({ txt = lg; _ }, cts) ->
       PP.longident_to_str lg = ty
       || List.exists (is_recursive_core_type ~loc ~ty) cts
+  | Ptyp_variant (rws, _, _) -> is_recursive_row_fields ~loc ~ty rws
   | _ -> false
 
-let rec from_core_type ~loc ?tree_types ?rec_types ct =
+and is_recursive_row_field ~loc ~ty rw =
+  match rw.prf_desc with
+  | Rinherit _ ->
+      Error.case_unsupported ~loc ~case:"Rinherit inside of row_field" ()
+  | Rtag (_, _, cts) -> List.exists (is_recursive_core_type ~loc ~ty) cts
+
+and is_recursive_row_fields ~loc ~ty rws =
+  List.exists (is_recursive_row_field ~loc ~ty) rws
+
+let rec from_core_type ~loc ?tree_types ?rec_types ~ty ct =
   match ct.ptyp_desc with
   | Ptyp_constr ({ txt = ty; _ }, []) ->
       T.from_longident ~loc ?tree_types ?rec_types ty
-  | Ptyp_constr ({ txt = ty; _ }, args) ->
-      let f = T.from_longident ~loc ty in
-      let args = List.map (from_core_type ~loc ?rec_types) args in
+  | Ptyp_constr ({ txt = x; _ }, args) ->
+      let f = T.from_longident ~loc x in
+      let args = List.map (from_core_type ~loc ?rec_types ~ty) args in
       T.constr_type ~loc ~f ~args ()
-  | Ptyp_tuple xs -> from_tuple ~loc xs
+  | Ptyp_tuple xs -> from_tuple ~loc ~ty xs
   | Ptyp_var s -> T.Primitive.from_string ~loc s
+  | Ptyp_variant (x, y, z) ->
+      from_ptyp_variant ~loc ?tree_types ?rec_types ~ty (x, y, z)
   | _ -> Error.case_unsupported ~loc ~case:"Ppx.Gen.Types.from_core_type" ()
 
+(** [from_ptyp_variant] is not the same as [from_variant] *)
+and from_ptyp_variant ~loc ?tree_types ?rec_types ~ty (rws, _, _) =
+  if is_recursive_row_fields ~loc ~ty rws then failwith "TODO rec ptyp_variant"
+  else
+    let l =
+      List.map
+        (fun rw ->
+          match rw.prf_desc with
+          | Rtag ({ txt; _ }, _, cts) ->
+              ( txt,
+                List.map (from_core_type ~loc ?tree_types ?rec_types ~ty) cts )
+          | _ -> assert false
+          (* If we get here, an exception should already have been raised *))
+        rws
+    in
+    T.variants ~loc ~ty l
+
 and from_type_kind ~loc ?rec_types ~ty = function
-  | Ptype_record xs -> from_record ~loc ?rec_types xs
+  | Ptype_record xs -> from_record ~loc ?rec_types ~ty xs
   | Ptype_variant xs -> from_variant ~loc ?rec_types ~ty xs
   | _ -> failwith "TODO 1"
 
-and from_record ~loc ?rec_types label_decls =
+and from_record ~loc ?rec_types ~ty label_decls =
   let gens =
-    List.map (fun x -> from_core_type ~loc ?rec_types x.pld_type) label_decls
+    List.map
+      (fun x -> from_core_type ~loc ?rec_types ~ty x.pld_type)
+      label_decls
   in
   T.record ~loc ~gens label_decls
 
-and from_tuple ~loc ?rec_types cts =
-  let gens = List.map (from_core_type ~loc ?rec_types) cts in
+and from_tuple ~loc ?rec_types ~ty cts =
+  let gens = List.map (from_core_type ~loc ?rec_types ~ty) cts in
   T.tuple ~loc gens
 
 and from_variant ~loc ?rec_types ~ty xs =
@@ -113,11 +144,12 @@ and from_variant ~loc ?rec_types ~ty xs =
 
     let leaves =
       List.filter is_leave xs
-      |> List.map (fun x -> from_constructor_decl ~loc ?rec_types x)
+      |> List.map (fun x -> from_constructor_decl ~loc ?rec_types ~ty x)
     in
     let nodes =
       List.map
-        (fun x -> from_constructor_decl ~loc ?rec_types ~tree_types:[ ty ] x)
+        (fun x ->
+          from_constructor_decl ~loc ?rec_types ~tree_types:[ ty ] ~ty x)
         xs
     in
 
@@ -125,22 +157,22 @@ and from_variant ~loc ?rec_types ~ty xs =
 
     T.tree ~loc ~ty ~leaves ~nodes ())
   else
-    let gens = List.map (from_constructor_decl ~loc) xs in
+    let gens = List.map (from_constructor_decl ~loc ?rec_types ~ty) xs in
     T.constructors ~loc gens
 
-and from_constructor_decl ~loc ?tree_types ?rec_types x =
+and from_constructor_decl ~loc ?tree_types ?rec_types ~ty x =
   let kname = x.pcd_name.txt in
   let f ~kargs = T.constructor ~loc ~kname ~kargs () in
   match x.pcd_args with
   | Pcstr_tuple [] | Pcstr_record [] -> T.constructor ~loc ~kname ()
   | Pcstr_tuple xs ->
-      let gens = List.map (from_core_type ~loc ?tree_types ?rec_types) xs in
+      let gens = List.map (from_core_type ~loc ?tree_types ?rec_types ~ty) xs in
       let kargs = T.tuple' ~loc gens in
       f ~kargs
   | Pcstr_record xs ->
       let gens =
         List.map
-          (fun x -> from_core_type ~loc ?tree_types ?rec_types x.pld_type)
+          (fun x -> from_core_type ~loc ?tree_types ?rec_types ~ty x.pld_type)
           xs
       in
       let kargs = T.record' ~loc ~gens xs in
@@ -157,7 +189,7 @@ let from_type_declaration ~loc ?rec_types td =
     (* We consider that type_kind contains the type information, and we take it
        over type_manifest *)
     | (_, Some x) -> x
-    | (Some ct, None) -> from_core_type ~loc ?rec_types ct
+    | (Some ct, None) -> from_core_type ~loc ?rec_types ~ty ct
     | _ -> assert false
     (* Can that case happens ? *)
   in
