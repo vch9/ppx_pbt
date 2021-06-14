@@ -98,9 +98,19 @@ and core_type_to_str ct =
   | Ptyp_var s -> s
   | Ptyp_tuple cts ->
       list_to_str ~left:"(" ~sep:" , " ~right:")" core_type_to_str cts
+  | Ptyp_arrow (x, left, right) ->
+      let x' = arg_label_to_str x in
+      let left' = core_type_to_str left in
+      let right' = core_type_to_str right in
+      Printf.sprintf "%s (%s -> %s)" x' left' right'
   | _ -> "TODO else core_type"
 
 and core_types_to_str cts = list_to_str core_type_to_str cts
+
+and arg_label_to_str = function
+  | Nolabel -> "_"
+  | Labelled s -> "~" ^ s
+  | Optional s -> "?" ^ s
 
 and type_kind_to_str = function
   | Ptype_abstract -> "abstract"
