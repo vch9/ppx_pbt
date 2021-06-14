@@ -91,6 +91,11 @@ module Properties = struct
 
   let roundtrip f g x = f (g x) = x
 
+  let roundtrip_data_encoding encoding x =
+    let encoded_x = Data_encoding.Json.construct encoding x in
+    let decoded_x = Data_encoding.Json.destruct encoding encoded_x in
+    x = decoded_x
+
   let from_string ?(loc = Location.none) = function
     | "commutative" -> [%expr Pbt.Properties.commutative]
     | "associative" -> [%expr Pbt.Properties.associative]

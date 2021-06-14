@@ -114,6 +114,17 @@ module Properties : sig
   (** [roundtrip f g x] test if f (g x) = x *)
   val roundtrip : ('a -> 'b) -> ('b -> 'a) -> 'b -> bool
 
+  (** [roundtrip_data_encoding encoding x] test the roundtrip property on
+   data_encoding
+
+      {[
+      let encoded_x = Data_encoding.Json.construct encoding x in
+      let decoded_x = Data_encoding.Json.destruct encoding encoded_x in
+      decoded_x = x
+      ]}
+*)
+  val roundtrip_data_encoding : 't Data_encoding.encoding -> 't -> bool
+
   (** Creates expression from a property identifier
 
       If the string belongs to this module properties, it will create an
