@@ -32,8 +32,6 @@ module AH = Common.Ast_helpers
 
 let pbt_name = "pbt"
 
-let gen_name = "arb"
-
 let ignore = ref false
 
 let filter_attributes expected xs =
@@ -64,9 +62,7 @@ class mapper =
         let loc = stri.pstr_loc in
 
         let infos_pbt = get_attributes stri |> filter_attributes pbt_name in
-        let infos_gen = get_attributes stri |> filter_attributes gen_name in
         let n_pbt = List.length infos_pbt in
-        let n_gen = List.length infos_gen in
 
         match stri with
         (* let f args = expr [@@pbt <properties>] *)
@@ -76,11 +72,6 @@ class mapper =
               List.map (Helpers.Info.update_name name) infos_pbt
             in
             AH.Structure.str_include ~loc (stri :: Test.Tests.replace_pbt infos)
-        (* type t = .. *)
-        | { pstr_desc = Pstr_type _; _ } when n_gen > 0 ->
-            AH.Structure.str_include
-              ~loc
-              [ stri; Arbitrary.replace_stri infos_gen stri ]
         (* default cases *)
         | x -> super#structure_item x
       in

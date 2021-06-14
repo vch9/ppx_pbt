@@ -35,8 +35,5 @@ val get_attributes : structure_item -> attribute list
 (** Name of attributes for ppx_pbt.pbt *)
 val pbt_name : string
 
-(** Name of attributes for ppx_pbt.gen *)
-val gen_name : string
-
 (** /!\ Meant for testing /!\ *)
 val ignore : bool ref

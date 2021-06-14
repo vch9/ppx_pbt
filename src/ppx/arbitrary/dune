@@ -1,5 +1,0 @@
-(library
- (name arbitrary)
- (public_name ppx_pbt.ppx_pbt.arbitrary)
- (libraries ppxlib qcheck common test)
- (preprocess (pps ppxlib.metaquot)))
