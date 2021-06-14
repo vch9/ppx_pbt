@@ -126,6 +126,27 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
+ (targets test_roundtrip_dataencoding.expected.format)
+ (deps (:pp pp.exe) (:input test_roundtrip_dataencoding.expected.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (targets test_roundtrip_dataencoding.actual)
+ (deps (:pp pp.exe) (:input test_roundtrip_dataencoding.ml))
+ (action (bash "./%{pp} --impl %{input} -o %{targets}")))
+
+(rule
+ (alias runtest)
+ (deps (:actual test_roundtrip_dataencoding.actual) (:expected test_roundtrip_dataencoding.expected.format))
+ (action (diff %{expected} %{actual})))
+
+(test
+ (name test_roundtrip_dataencoding)
+ (modules test_roundtrip_dataencoding)
+ (libraries zarith data-encoding)
+ (preprocess (pps ppx_pbt)))
+
+(rule
  (targets test_saturing.expected.format)
  (deps (:pp pp.exe) (:input test_saturing.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))

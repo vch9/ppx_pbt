@@ -113,6 +113,8 @@ module Properties = struct
     | "floored_right" -> [%expr Pbt.Properties.floored_right]
     | "floored" -> [%expr Pbt.Properties.floored]
     | "roundtrip" -> [%expr Pbt.Properties.roundtrip]
+    | "roundtrip_data_encoding" ->
+        [%expr Pbt.Properties.roundtrip_data_encoding]
     | s ->
         {
           pexp_desc = Pexp_ident { txt = Lident s; loc };
@@ -138,6 +140,7 @@ module Properties = struct
     | "absorb_right" -> Some (1, 1)
     | "absorbs" -> Some (1, 1)
     | "roundtrip" -> Some (1, 1)
+    | "roundtrip_data_encoding" -> Some (1, 0)
     | _ -> None
 
   let nb_of_gens s =
