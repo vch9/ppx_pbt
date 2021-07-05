@@ -24,16 +24,5 @@
 (*****************************************************************************)
 
 (** Ppx-rewriter for property based testing with QCheck *)
-open Ppxlib
 
-(** Filter attributes with a given name *)
-val filter_attributes : string -> attributes -> Common.Helpers.Info.t list
-
-(** Get attributes attached to a structure item *)
-val get_attributes : structure_item -> attribute list
-
-(** Name of attributes for ppx_pbt.pbt *)
-val pbt_name : string
-
-(** /!\ Meant for testing /!\ *)
 val ignore : bool ref

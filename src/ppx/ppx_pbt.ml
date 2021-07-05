@@ -24,61 +24,102 @@
 (*****************************************************************************)
 
 open Ppxlib
-module Error = Common.Error
-module Helpers = Common.Helpers
-module AH = Common.Ast_helpers
-
-(*------ Find attributes in Ast.structure_item ------*)
+module Env = Local_env
 
 let pbt_name = "pbt"
 
 let ignore = ref false
 
 let filter_attributes expected xs =
-  let open Helpers in
   List.filter (fun attr -> attr.attr_name.txt = expected) xs
-  |> List.map (fun attr -> Info.create_info ~attr ~loc:attr.attr_loc ())
 
-let get_attributes stri =
-  match stri.pstr_desc with
-  | Pstr_eval (_, attributes) -> attributes
-  | Pstr_value (_, vbs) ->
-      List.map (fun vb -> vb.pvb_attributes) vbs |> List.concat
-  | Pstr_type (_, tds) ->
-      List.map (fun td -> td.ptype_attributes) tds |> List.concat
-  | _ -> []
+let from_string properties =
+  let lexbuf_pps = Lexing.from_string properties in
+  Test.Parser.properties Test.Lexer.token lexbuf_pps
 
-let extract_name_from_pat pat =
-  match pat.ppat_desc with
-  | Ppat_var { txt = name; _ } -> name
-  | _ -> Error.case_unsupported ~case:"Ppx.ppx_pbt.extract_name_from_pat" ()
+(** [get_file_name_sig sigi] returns the file name where [sigi] is located *)
+let get_file_name_sig sigi =
+  sigi.psig_loc.loc_start.pos_fname |> Filename.remove_extension
 
-class mapper =
-  object (_self)
-    inherit Ast_traverse.map as super
+(** [get_file_name_str stri] returns the file name where [stri] is located *)
+let get_file_name_str stri =
+  stri.pstr_loc.loc_start.pos_fname |> Filename.remove_extension
 
-    method! structure_item stri =
-      let expand stri =
-        let loc = stri.pstr_loc in
+(** [get_properties attributes] returns the list propertiy inside [attributes]
 
-        let infos_pbt = get_attributes stri |> filter_attributes pbt_name in
-        let n_pbt = List.length infos_pbt in
+    Step 1: keep every attribute named {!pbt_name}
+    Step 3: extract each attribute's payload, which must be a string constant
+    Step 3: parse the properties
+    Step 4: concat every properties into a single list
 
-        match stri with
-        (* let f args = expr [@@pbt <properties>] *)
-        | [%stri let [%p? f] = [%e? _body]] when n_pbt > 0 ->
-            let infos =
-              let name = extract_name_from_pat f in
-              List.map (Helpers.Info.update_name name) infos_pbt
-            in
-            AH.Structure.str_include ~loc (stri :: Test.Tests.replace_pbt infos)
-        (* default cases *)
-        | x -> super#structure_item x
-      in
+    Implicitly the function returns an empty list of properties if there is not
+    properties attached on the attributes *)
+let get_properties attributes =
+  filter_attributes pbt_name attributes
+  |> List.map Common.Payload.pbt_from_attribute
+  |> List.map from_string |> List.concat
 
-      if not !ignore then expand stri else super#structure_item stri
-  end
+(** [find_attributes code_path sig] does an in-depth course of a signature_item.
 
-let () =
-  let mapper = new mapper in
-  Driver.register_transformation "ppx_pbt" ~impl:mapper#structure
+    It looks for [Psig_value] where there's an attribute "pbt" attached to it.
+    Every occurences of signature item with the "pbt" attribute is stored in the
+    local environment, in order to be use in {!inline_impl_tests}
+
+    Once a recursive case is reached, we store the current path and go deeper. *)
+let find_attributes code_path x =
+  match x.psig_desc with
+  | Psig_value vd -> (
+      let properties = get_properties vd.pval_attributes in
+      match properties with
+      | [] -> ()
+      | _ ->
+          let path = code_path in
+          let name = vd.pval_name.txt in
+          let value = x in
+          Env.add_env ~path ~properties ~value name)
+  | _ -> ()
+
+(** [find_and_replace does the actual in-depth course of structured_item according
+    to the path found in a signature_item *)
+let find_and_replace _path _str = failwith "todo"
+
+(** [inline_impl_tests env str] replaces the according specification in mli with the
+    actual implementation.
+
+    For each Psig_value found in {!check_attributes} stored in the environment, we follow the
+    path between the recursives structure_items until we eventually find the according
+    Pstr_value using {!find_and_inline} *)
+let inline_impl_tests structure : structure_item list =
+  List.fold_left
+    (fun structure psig_value ->
+      let path = Env.get_path psig_value in
+      let properties = Env.get_properties psig_value in
+      let name = Env.get_name psig_value in
+      let sig_item = Env.get_value psig_value in
+      match path with
+      | [] ->
+          (* case de base, on est dans le fichier pas de récursion*)
+          let tests =
+            Test.Tests.properties_to_test ~name ?sig_item properties
+          in
+          structure @ tests
+      | _ -> List.map (find_and_replace path) structure)
+    structure
+    (Env.get_psig_values ())
+
+let intf xs =
+  (if not !ignore then
+   let file_name = get_file_name_sig @@ List.hd xs in
+   let () = Env.init_env ~file_name () in
+   let () = List.iter (find_attributes []) xs in
+   let () = Env.store_env () in
+   ()) ;
+  xs
+
+let impl xs =
+  let file_name = get_file_name_str @@ List.hd xs in
+  let () = Env.fetch_env file_name in
+  if (not !ignore) && file_name = Env.get_file_name () then inline_impl_tests xs
+  else xs
+
+let () = Driver.register_transformation "ppx_test" ~intf ~impl
