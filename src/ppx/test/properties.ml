@@ -30,19 +30,19 @@ module AH = Common.Ast_helpers
 module E = AH.Expression
 module P = AH.Pattern
 
-type property_name = string
+type property_name = string [@@deriving show]
 
-type arg = string
+type arg = string [@@deriving show]
 
-type gen = string
+type gen = string [@@deriving show]
 
-type property = property_name * arg list * gen list
+type property = property_name * arg list * gen list [@@deriving show]
 
-type properties = property list
+type properties = property list [@@deriving show]
 
-and t = properties
+and t = properties [@@deriving show]
 
-let check_help loc ppty xs ty =
+let _check_help loc ppty xs ty =
   let (required, msg, f) =
     match ty with
     | `Args ->
@@ -63,9 +63,12 @@ let check_help loc ppty xs ty =
         ppty
         msg
 
-let check_gens loc property_name gens = check_help loc property_name gens `Gens
+let check_gens _loc _property_name _gens =
+  (* check_help loc property_name gens `Gens *)
+  ()
 
-let check_args loc property_name args = check_help loc property_name args `Args
+let check_args _loc _property_name _args = ()
+(* check_help loc property_name args `Args *)
 
 let args_to_expr loc args =
   let f x = (Nolabel, E.pexp_lident ~loc x) in

@@ -42,6 +42,8 @@ type properties = property list
 
 and t = properties
 
+val pp : Format.formatter -> t -> unit
+
 (** Checks gens check if the number of given generator is equals to the expected
     number of generators.
     Raise an exception if expected and actual are different *)
