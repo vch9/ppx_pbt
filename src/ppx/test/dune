@@ -1,8 +1,8 @@
 (library
  (name test)
  (public_name ppx_pbt.ppx_pbt.test)
- (libraries ppxlib menhirLib qcheck common ppx_pbt.pbt)
- (preprocess (pps ppxlib.metaquot)))
+ (libraries ppxlib menhirLib qcheck ppx_pbt.pbt ppx_deriving_qcheck.arbitrary)
+ (preprocess (pps ppxlib.metaquot ppx_deriving.show)))
 
 (ocamllex lexer)
 

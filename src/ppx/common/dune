@@ -1,5 +1,0 @@
-(library
- (name common)
- (public_name ppx_pbt.ppx_pbt.common)
- (libraries ppxlib)
- (preprocess (pps ppxlib.metaquot)))
