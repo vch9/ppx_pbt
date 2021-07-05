@@ -23,43 +23,40 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-(** Module entry point, expand structure_item with tests *)
+(** Module handling the test generation.
+
+    Entry point is {!properties_to_test}. *)
+
 open Ppxlib
 
-(** Parse a string into a Properties.t, using Menhir *)
-val from_string : string -> Properties.t
+(** [properties_to_tests loc name sig_item properties] create a test for every
+    property inside [properties].
 
-(** Create tests using [property_to_test] on every property *)
+    Returns the new list of tests as a structure_item list including
+    QCheck.Test.t and add them to the test suite. *)
 val properties_to_test :
-  loc:location -> name:string -> Properties.t -> structure_item list
+  name:string -> ?sig_item:signature_item -> Properties.t -> structure_item list
 
-(** Create the test based on the property, also returns the name of the test
-    in order to be added to the test suite *)
+(** [property_to_test loc name properties] create a test for a single property
+    on the function called [name].
+    Returns the test and its identifier as a string.
+
+    The optional paramater [?sig_item] can be used to infer required generator
+    using {{:https://github.com/vch9/ppx_deriving_qcheck}ppx_deriving_qcheck}. *)
 val property_to_test :
-  loc:location -> name:string -> Properties.property -> structure_item * string
+  name:string ->
+  ?sig_item:signature_item ->
+  Properties.property ->
+  structure_item * string
 
 (** Extract generators from generators identifiers, also check if the number
     of generator is correct only if the property is known to our program *)
 val gens_to_test :
   loc:location ->
+  signature_item option ->
   Properties.property_name ->
   Properties.gen list ->
   expression * expression Common.Helpers.Pairs.nested_pairs
-
-(** Create names for a test
-
-    (pattern, expression, string)
-
-    They are later used to create QCheck tests
-
-    pattern    -> pattern representing the test name
-    expression -> expression representing the test structure item
-    string     -> name of the test as string for error messages *)
-val name_to_test :
-  loc:location ->
-  string ->
-  Properties.property_name ->
-  pattern * expression * string
 
 (** Create the boolean function used in QCheck tests *)
 val pbt_to_test :
@@ -69,6 +66,3 @@ val pbt_to_test :
   expression Common.Helpers.Pairs.nested_pairs ->
   Properties.arg list ->
   expression
-
-(** Module entry point, returns tests generated from the infos *)
-val replace_pbt : Common.Helpers.Info.t list -> structure_item list

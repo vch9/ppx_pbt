@@ -23,11 +23,6 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-(*------ Parse properties ------*)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Parser.properties Lexer.token lexbuf_pps
-
 open Ppxlib
 module Error = Common.Error
 module AH = Common.Ast_helpers
@@ -37,18 +32,25 @@ module Info = Common.Helpers.Info
 module Payload = Common.Payload
 module Pairs = Common.Helpers.Pairs
 
-(* Replace Properties.t into list of structure item *)
-let rec properties_to_test ~loc ~name properties =
+(** [extract_location_sig_item sig_item] extract location from [sig_item].
+    Returns None if [sig_item] is absent *)
+let extract_location_sig_item = function
+  | None -> Location.none
+  | Some x -> x.psig_loc
+
+let rec properties_to_test ~name ?sig_item properties =
   let (tests, names) =
-    List.split @@ List.map (property_to_test ~loc ~name) properties
+    List.split @@ List.map (property_to_test ~name ?sig_item) properties
   in
+  let loc = Location.none in
   let names = E.pexp_list ~loc (List.map (E.pexp_lident ~loc) names) in
   let add_runner = [%stri let () = Runner.add_tests [%e names]] in
   tests @ [ add_runner ]
 
-and property_to_test ~loc ~name (property, args, gens) =
+and property_to_test ~name ?sig_item (property, args, gens) =
+  let loc = extract_location_sig_item sig_item in
   let (pat_name, expr_name, test_name) = name_to_test ~loc name property in
-  let (gens_expr, gens) = gens_to_test ~loc property gens in
+  let (gens_expr, gens) = gens_to_test ~loc sig_item property gens in
   let tested_fun = pbt_to_test ~loc name property gens args in
 
   let test =
@@ -58,13 +60,21 @@ and property_to_test ~loc ~name (property, args, gens) =
   in
   (test, test_name)
 
-and gens_to_test ~loc property gens =
-  let _ = Properties.check_gens loc property gens in
-  let gens = Gens.replace_gens loc gens in
-  let gens = Pairs.nest_generators gens in
-  let expr_gens = Pairs.nested_pairs_to_expr loc gens in
-  (expr_gens, gens)
+(** [gens_to_test loc ?sig_item property gens] extract QCheck generators from [gens].
 
+    In the case where [sig_item] is present, we can infer the type and number of
+    generators required for our [property] and the function under test. *)
+and gens_to_test ~loc (sig_item : signature_item option) property gens =
+  Gens.create_gens ~loc sig_item property gens
+
+(** [name_to_test loc name property] builds and returns
+
+    - An expression:
+    {[ let () = Runner.add_test [name] ]}
+    - A pattern:
+    {[ let [name] = QCheck.Test.make .. ]}
+    - A QCheck test name:
+    {[ let .. = QCheck.Test.make ~name:[name] ]} *)
 and name_to_test ~loc name property =
   let qcheck_name = Format.sprintf "%s_is_%s" name property in
   let test_name = Format.sprintf "test_%s" qcheck_name in
@@ -81,15 +91,3 @@ and pbt_to_test ~loc name property gens args =
   in
   let call = Properties.call_property loc name (property, args, gens) in
   [%expr fun [%p fun_pattern] -> [%e call]]
-
-let replace_pbt (xs : Info.t list) =
-  match xs with
-  (* Structure item by construction can attach only one property *)
-  | [ info ] ->
-      let loc = Info.get_loc info in
-      let name = Info.get_name info in
-      Payload.pbt_from_attribute (Option.get (Info.get_attribute info))
-      |> from_string
-      |> properties_to_test ~loc ~name
-  (* TODO: better error management *)
-  | _ -> assert false
