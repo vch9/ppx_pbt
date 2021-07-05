@@ -25,6 +25,36 @@
 
 (** Modules handling generators *)
 
-(** Takes generators with their names and replace them with expression
-    using [Pbt.Properties.from_string] *)
-val replace_gens : Ppxlib.location -> string list -> Ppxlib.expression list
+open Ppxlib
+
+(** [replace_gens loc gens] replace generators identifers with the QCheck generator
+    using [Pbt.Gens.from_string] *)
+val replace_gens : loc:location -> Properties.gen list -> expression list
+
+(** [infer_gens_from_sig loc sig] extract the generators needed for the signature
+    item, which must be a Psig_value.
+
+    {{:https://github.com/vch9/ppx_deriving_qcheck}ppx_deriving_qcheck} is used to
+    create generators from core_type inside the signature.
+    If the deriver was not able to derive a core_type inside [sig], it is replaced
+    by the value None. *)
+val infer_gens_from_sig :
+  loc:location -> signature_item -> expression option list
+
+(** [create_gens loc sig_item property gens] extract QCheck generators from the
+    combination of [gens] and [sig_item].
+
+    In priority, generators are taken from [gens]. In the case where [sig_item] is
+    present, we can infer missing generators from [gens] based on the signature
+    representation of the function.
+
+    In the case where [property] is a built-in property of this ppx, we can perform
+    2 checks:
+    - Check that the number of generator is correct.
+    - TODO: Check that the infered generators respect the property's type. *)
+val create_gens :
+  loc:location ->
+  signature_item option ->
+  Properties.property_name ->
+  Properties.gen list ->
+  expression * expression Common.Helpers.Pairs.nested_pairs

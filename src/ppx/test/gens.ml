@@ -22,5 +22,67 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
+open Ppxlib
 
-let replace_gens loc gen_ids = List.map (Pbt.Gens.from_string ~loc) gen_ids
+let replace_gens ~loc gens = List.map (Pbt.Gens.from_string ~loc) gens
+
+(** [from_core_type_opt] is a try/catch version of
+    {!Ppx_deriving_qcheck.Arbitrary.from_core_type}.
+
+    The goal is to derive basic types from a signature_item, every
+    exception raised from ppx_deriving_qcheck will be translated to None. *)
+let from_core_type_opt ~loc x =
+  try Some (Arbitrary.from_core_type ~loc ~ty:"_none_" x) with _ -> None
+
+let rec arrow_to_list (x : core_type) : core_type list =
+  match x.ptyp_desc with
+  | Ptyp_arrow (_, left, right) ->
+      let acc = arrow_to_list right in
+      left :: acc
+  | _ -> []
+
+let nb_of_gens sigi =
+  Option.fold
+    ~none:None
+    ~some:(fun x ->
+      match x.psig_desc with
+      | Psig_value { pval_type = ct; _ } ->
+          arrow_to_list ct |> List.length |> Option.some
+      | _ -> None)
+    sigi
+
+let takes_n ~loc l1 l2 n =
+  let rec aux l1 l2 n =
+    assert (n >= 0) ;
+    match (n, l1, l2) with
+    | (0, _, _) -> []
+    | (n, x :: l1, _ :: l2) -> x :: aux l1 l2 (n - 1)
+    | (n, [], x :: l2) -> Option.get x :: aux l1 l2 (n - 1)
+    | _ ->
+        Common.Error.location_error
+          ~loc
+          ~msg:"todo error, there is not enough generators"
+          ()
+  in
+  List.rev @@ aux l1 l2 n
+
+let infer_gens_from_sig ~loc sig_item =
+  match sig_item.psig_desc with
+  | Psig_value { pval_type = ct; _ } ->
+      arrow_to_list ct |> List.map (from_core_type_opt ~loc)
+  | _ -> []
+
+let create_gens ~loc sig_item property gens =
+  let given_gens = replace_gens ~loc gens in
+  let infered_gens =
+    Option.fold ~none:[] ~some:(infer_gens_from_sig ~loc) sig_item
+  in
+
+  let gens =
+    match (Pbt.Properties.nb_of_gens property, nb_of_gens sig_item) with
+    | (None, None) -> given_gens
+    | (Some n, _) | (_, Some n) -> takes_n ~loc given_gens infered_gens n
+  in
+  let nested_gens = Common__Helpers.Pairs.nest_generators gens in
+
+  (Common__Helpers.Pairs.nested_pairs_to_expr loc nested_gens, nested_gens)
