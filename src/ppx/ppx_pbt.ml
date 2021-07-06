@@ -118,8 +118,10 @@ let intf xs =
 
 let impl xs =
   let file_name = get_file_name_str @@ List.hd xs in
-  let () = Env.fetch_env file_name in
-  if (not !ignore) && file_name = Env.get_file_name () then inline_impl_tests xs
+
+  if not !ignore then
+    let () = Env.fetch_env file_name in
+    if file_name = Env.get_file_name () then inline_impl_tests xs else xs
   else xs
 
 let () = Driver.register_transformation "ppx_test" ~intf ~impl
