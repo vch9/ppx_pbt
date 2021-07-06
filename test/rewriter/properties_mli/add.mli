@@ -1,2 +1,1 @@
-val add : int -> int -> int
-  [@@pbt "commutative; neutrals"] [@@pbt "associative"]
+val add : int -> int -> int [@@pbt "commutative; associative[int, int, int]"]
