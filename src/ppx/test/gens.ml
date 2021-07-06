@@ -52,18 +52,14 @@ let nb_of_gens sigi =
       | _ -> None)
     sigi
 
-let takes_n ~loc l1 l2 n =
+let takes_n l1 l2 n =
   let rec aux l1 l2 n =
     assert (n >= 0) ;
     match (n, l1, l2) with
     | (0, _, _) -> []
-    | (n, x :: l1, _ :: l2) -> x :: aux l1 l2 (n - 1)
+    | (n, x :: l1, _ :: l2) | (n, x :: l1, l2) -> x :: aux l1 l2 (n - 1)
     | (n, [], x :: l2) -> Option.get x :: aux l1 l2 (n - 1)
-    | _ ->
-        Common.Error.location_error
-          ~loc
-          ~msg:"todo error, there is not enough generators"
-          ()
+    | _ -> raise (Invalid_argument "")
   in
   List.rev @@ aux l1 l2 n
 
@@ -82,7 +78,11 @@ let create_gens ~loc sig_item property gens =
   let gens =
     match (Pbt.Properties.nb_of_gens property, nb_of_gens sig_item) with
     | (None, None) -> given_gens
-    | (Some n, _) | (_, Some n) -> takes_n ~loc given_gens infered_gens n
+    | (Some n, _) | (_, Some n) -> (
+        try takes_n given_gens infered_gens n
+        with Invalid_argument _ ->
+          let msg = Printf.sprintf "%s requires %d generators" property n in
+          Common.Error.location_error ~loc ~msg ())
   in
   let nested_gens = Common__Helpers.Pairs.nest_generators gens in
 
