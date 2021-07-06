@@ -24,7 +24,8 @@
 (*****************************************************************************)
 open Ppxlib
 
-let replace_gens ~loc gens = List.map (Pbt.Gens.from_string ~loc) gens
+let replace_gens ~loc gens =
+  List.map (Arbitrary__Types_helper.Primitive.from_string ~loc) gens
 
 (** [from_core_type_opt] is a try/catch version of
     {!Ppx_deriving_qcheck.Arbitrary.from_core_type}.
