@@ -99,9 +99,7 @@ and find_attributes_signature_item code_path sigi =
           let name = vd.pval_name.txt in
           let value = sigi in
           Env.add_env ~path ~properties ~value name)
-  | Psig_module { pmd_name = { txt = name; _ }; pmd_type = mtd; _ } ->
-      (* Can the signature_item can have None as a name ? *)
-      let name = Option.get name in
+  | Psig_module { pmd_name = { txt = Some name; _ }; pmd_type = mtd; _ } ->
       let code_path = `Psig_module name :: code_path in
       find_attributes_module_type code_path mtd
   | _ -> ()
@@ -114,7 +112,7 @@ and find_attributes_module_type code_path mtd =
 
 (** [find_and_replace does the actual in-depth course of structured_item according
     to the path found in a signature_item *)
-let find_and_replace (path, properties, name, sigi) stri : structure_item =
+let rec find_and_replace (path, properties, name, sigi) stri : structure_item =
   let loc = stri.pstr_loc in
 
   match (path, stri) with
@@ -127,6 +125,33 @@ let find_and_replace (path, properties, name, sigi) stri : structure_item =
           in
           Common.Ast_helpers.Structure.str_include ~loc @@ stri :: tests
       | _ -> stri)
+  (* `Psig_module :: _, Pstr_module *)
+  | ( `Psig_module mod_name :: path,
+      {
+        pstr_desc =
+          Pstr_module
+            ({
+               pmb_name = { txt = Some mod_name'; _ };
+               pmb_expr = { pmod_desc = Pmod_structure structure; _ } as pmb;
+               _;
+             } as md);
+        _;
+      } )
+    when mod_name = mod_name' ->
+      let structure' =
+        List.map
+          (fun x -> find_and_replace (path, properties, name, sigi) x)
+          structure
+      in
+      {
+        stri with
+        pstr_desc =
+          Pstr_module
+            {
+              md with
+              pmb_expr = { pmb with pmod_desc = Pmod_structure structure' };
+            };
+      }
   | (_, _) -> stri
 
 (** [inline_impl_tests env str] replaces the according specification in mli with the
