@@ -86,22 +86,48 @@ let get_properties attributes =
     local environment, in order to be use in {!inline_impl_tests}
 
     Once a recursive case is reached, we store the current path and go deeper. *)
-let find_attributes code_path x =
-  match x.psig_desc with
+let rec find_attributes x = find_attributes_signature_item [] x
+
+and find_attributes_signature_item code_path sigi =
+  match sigi.psig_desc with
   | Psig_value vd -> (
       let properties = get_properties vd.pval_attributes in
       match properties with
       | [] -> ()
       | _ ->
-          let path = code_path in
+          let path = List.rev code_path in
           let name = vd.pval_name.txt in
-          let value = x in
+          let value = sigi in
           Env.add_env ~path ~properties ~value name)
+  | Psig_module { pmd_name = { txt = name; _ }; pmd_type = mtd; _ } ->
+      (* Can the signature_item can have None as a name ? *)
+      let name = Option.get name in
+      let code_path = `Psig_module name :: code_path in
+      find_attributes_module_type code_path mtd
   | _ -> ()
+
+and find_attributes_module_type code_path mtd =
+  match mtd.pmty_desc with
+  | Pmty_signature sigs ->
+      List.iter (find_attributes_signature_item code_path) sigs
+  | _ -> failwith "TODO"
 
 (** [find_and_replace does the actual in-depth course of structured_item according
     to the path found in a signature_item *)
-let find_and_replace _path _str = failwith "todo"
+let find_and_replace (path, properties, name, sigi) stri : structure_item =
+  let loc = stri.pstr_loc in
+
+  match (path, stri) with
+  | ([], [%stri let [%p? pat] = [%e? _]])
+  | ([], [%stri let rec [%p? pat] = [%e? _]]) -> (
+      match extract_name_from_pattern pat with
+      | Some name' when name = name' ->
+          let tests =
+            Test.Tests.properties_to_test ~name ?sig_item:sigi properties
+          in
+          Common.Ast_helpers.Structure.str_include ~loc @@ stri :: tests
+      | _ -> stri)
+  | (_, _) -> stri
 
 (** [inline_impl_tests env str] replaces the according specification in mli with the
     actual implementation.
@@ -116,14 +142,7 @@ let inline_impl_tests structure : structure_item list =
       let properties = Env.get_properties psig_value in
       let name = Env.get_name psig_value in
       let sig_item = Env.get_value psig_value in
-      match path with
-      | [] ->
-          (* case de base, on est dans le fichier pas de récursion*)
-          let tests =
-            Test.Tests.properties_to_test ~name ?sig_item properties
-          in
-          structure @ tests
-      | _ -> List.map (find_and_replace path) structure)
+      List.map (find_and_replace (path, properties, name, sig_item)) structure)
     structure
     (Env.get_psig_values ())
 
@@ -131,7 +150,7 @@ let intf xs =
   (if not (ignore ()) then
    let file_name = get_file_name_sig @@ List.hd xs in
    let () = Env.init_env ~file_name () in
-   let () = List.iter (find_attributes []) xs in
+   let () = List.iter find_attributes xs in
    let () = Env.store_env () in
    ()) ;
   xs

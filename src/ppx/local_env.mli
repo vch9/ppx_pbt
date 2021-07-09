@@ -32,7 +32,7 @@
     pre-processing is applied on the implementation file *)
 
 (** [path] is a DFS representation of recursive signature item *)
-type path = [ `Foo ] list
+type path = [ `Psig_module of string ] list
 
 (** [psig_value] stores the function with the associated specification found
     in the attributes.
