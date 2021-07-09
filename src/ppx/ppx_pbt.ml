@@ -26,9 +26,17 @@
 open Ppxlib
 module Env = Local_env
 
-let pbt_name = "pbt"
+let print_argv () = Array.fold_left (fun acc x -> acc ^ " " ^ x) "" Sys.argv
 
-let ignore = ref false
+let ignore () =
+  Array.exists
+    (fun x ->
+      Filename.check_suffix x ".expected.ml"
+      || Filename.check_suffix x ".pp.ml"
+      || Filename.check_suffix x ".pp.mli")
+    Sys.argv
+
+let pbt_name = "pbt"
 
 let filter_attributes expected xs =
   List.filter (fun attr -> attr.attr_name.txt = expected) xs
@@ -108,7 +116,7 @@ let inline_impl_tests structure : structure_item list =
     (Env.get_psig_values ())
 
 let intf xs =
-  (if not !ignore then
+  (if not (ignore ()) then
    let file_name = get_file_name_sig @@ List.hd xs in
    let () = Env.init_env ~file_name () in
    let () = List.iter (find_attributes []) xs in
@@ -119,7 +127,7 @@ let intf xs =
 let impl xs =
   let file_name = get_file_name_str @@ List.hd xs in
 
-  if not !ignore then
+  if not (ignore ()) then
     let () = Env.fetch_env file_name in
     if file_name = Env.get_file_name () then inline_impl_tests xs else xs
   else xs
