@@ -45,6 +45,18 @@ let from_string properties =
   let lexbuf_pps = Lexing.from_string properties in
   Test.Parser.properties Test.Lexer.token lexbuf_pps
 
+(** [extract_name_from_pattern pat] tries to extract the function name
+    located in the pattern {[ let <pattern> = <expr> ]} *)
+let extract_name_from_pattern pat : string option =
+  match pat.ppat_desc with
+  | Ppat_any -> None
+  | Ppat_var { txt = x; _ } -> Some x
+  | _ ->
+      let x = Obj.Extension_constructor.of_val pat in
+      let x = Obj.Extension_constructor.name x in
+      Printf.printf "extract_name_from_pattern: %s\n" x ;
+      None
+
 (** [get_file_name_sig sigi] returns the file name where [sigi] is located *)
 let get_file_name_sig sigi =
   sigi.psig_loc.loc_start.pos_fname |> Filename.remove_extension
