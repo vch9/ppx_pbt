@@ -97,3 +97,6 @@ val store_env : unit -> unit
 (** [fetch_env file_path] restore the environment [t] from the disk using [file_name]
     to fetch the correct environment *)
 val fetch_env : string -> unit
+
+(** [pp ()] pretty print the current environment, exposed only for internal testing *)
+val pp : Format.formatter -> unit

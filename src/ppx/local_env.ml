@@ -98,3 +98,5 @@ let fetch_env file_name =
   let in_channel = open_in path in
   let () = env := Marshal.from_channel in_channel in
   close_in in_channel
+
+let pp fmt = pp fmt !env
