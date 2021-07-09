@@ -43,3 +43,21 @@ module Math = struct
     let () = Runner.add_tests [ test_math_add_is_commutative ]
   end
 end
+
+module MathFunct (MATH : sig
+  val math_add : int -> int -> int
+end) =
+struct
+  include struct
+    let math_funct_add = MATH.math_add
+
+    let test_math_funct_add_is_commutative =
+      QCheck.Test.make
+        ~name:"math_funct_add_is_commutative"
+        (QCheck.pair QCheck.int QCheck.int)
+        (fun (gen_0, gen_1) ->
+          Pbt.Properties.commutative math_funct_add gen_0 gen_1)
+
+    let () = Runner.add_tests [ test_math_funct_add_is_commutative ]
+  end
+end

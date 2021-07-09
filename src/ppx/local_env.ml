@@ -25,7 +25,9 @@
 
 open Ppxlib
 
-type path = [ `Psig_module of string ] list [@@deriving show]
+type md_expr = [ `Structure | `Functor ] [@@deriving show]
+
+type path = [ `Psig_module of string | md_expr ] list [@@deriving show]
 
 type psig_value = {
   name : string;

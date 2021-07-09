@@ -104,10 +104,14 @@ and find_attributes_signature_item code_path sigi =
       find_attributes_module_type code_path mtd
   | _ -> ()
 
-and find_attributes_module_type code_path mtd =
+and find_attributes_module_type (code_path : Env.path) mtd =
   match mtd.pmty_desc with
   | Pmty_signature sigs ->
+      let code_path = `Structure :: code_path in
       List.iter (find_attributes_signature_item code_path) sigs
+  | Pmty_functor (_, mtd) ->
+      let code_path = `Functor :: code_path in
+      find_attributes_module_type code_path mtd
   | _ -> failwith "TODO"
 
 (** [find_and_replace does the actual in-depth course of structured_item according
@@ -132,27 +136,38 @@ let rec find_and_replace (path, properties, name, sigi) stri : structure_item =
           Pstr_module
             ({
                pmb_name = { txt = Some mod_name'; _ };
-               pmb_expr = { pmod_desc = Pmod_structure structure; _ } as pmb;
-               _;
+               (* pmb_expr = { pmod_desc = Pmod_structure structure; _ } as pmb; *)
+             _;
              } as md);
         _;
       } )
     when mod_name = mod_name' ->
-      let structure' =
-        List.map
-          (fun x -> find_and_replace (path, properties, name, sigi) x)
-          structure
-      in
       {
         stri with
         pstr_desc =
           Pstr_module
             {
               md with
-              pmb_expr = { pmb with pmod_desc = Pmod_structure structure' };
+              pmb_expr =
+                find_and_replace_module_expr
+                  (path, properties, name, sigi)
+                  md.pmb_expr;
             };
       }
   | (_, _) -> stri
+
+and find_and_replace_module_expr (path, properties, name, sigi) mdexpr :
+    module_expr =
+  match (path, mdexpr.pmod_desc) with
+  | (`Functor :: path, Pmod_functor (func_param, md)) ->
+      let md = find_and_replace_module_expr (path, properties, name, sigi) md in
+      { mdexpr with pmod_desc = Pmod_functor (func_param, md) }
+  | (`Structure :: path, Pmod_structure structure) ->
+      let structure =
+        List.map (find_and_replace (path, properties, name, sigi)) structure
+      in
+      { mdexpr with pmod_desc = Pmod_structure structure }
+  | _ -> failwith "TODO"
 
 (** [inline_impl_tests env str] replaces the according specification in mli with the
     actual implementation.

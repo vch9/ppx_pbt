@@ -6,3 +6,10 @@ let rec add_2 x y =
 module Math = struct
   let math_add = ( + )
 end
+
+module MathFunct (MATH : sig
+  val math_add : int -> int -> int
+end) =
+struct
+  let math_funct_add = MATH.math_add
+end

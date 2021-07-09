@@ -31,8 +31,10 @@
     in [t], they later can be stored on the disk and restored when the
     pre-processing is applied on the implementation file *)
 
+type md_expr = [ `Structure | `Functor ]
+
 (** [path] is a DFS representation of recursive signature item *)
-type path = [ `Psig_module of string ] list
+type path = [ `Psig_module of string | md_expr ] list
 
 (** [psig_value] stores the function with the associated specification found
     in the attributes.
