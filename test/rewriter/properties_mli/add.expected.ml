@@ -29,3 +29,17 @@ include struct
 
   let () = Runner.add_tests [ test_add_2_is_commutative ]
 end
+
+module Math = struct
+  include struct
+    let math_add = ( + )
+
+    let test_math_add_is_commutative =
+      QCheck.Test.make
+        ~name:"math_add_is_commutative"
+        (QCheck.pair QCheck.int QCheck.int)
+        (fun (gen_0, gen_1) -> Pbt.Properties.commutative math_add gen_0 gen_1)
+
+    let () = Runner.add_tests [ test_math_add_is_commutative ]
+  end
+end
