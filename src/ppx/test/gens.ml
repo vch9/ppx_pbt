@@ -25,7 +25,12 @@
 open Ppxlib
 
 let replace_gens ~loc gens =
-  List.map (Arbitrary__Types_helper.Primitive.from_string ~loc) gens
+  List.map
+    (Arbitrary__Types_helper.Primitive.from_string
+       ~loc
+       ~recursives_types:[]
+       ~mutual_types:[])
+    gens
 
 (** [from_core_type_opt] is a try/catch version of
     {!Ppx_deriving_qcheck.Arbitrary.from_core_type}.
@@ -33,7 +38,8 @@ let replace_gens ~loc gens =
     The goal is to derive basic types from a signature_item, every
     exception raised from ppx_deriving_qcheck will be translated to None. *)
 let from_core_type_opt ~loc x =
-  try Some (Arbitrary.from_core_type ~loc ~ty:"_none_" x) with _ -> None
+  let env = Arbitrary.env "_none_" in
+  try Some (Arbitrary.from_core_type ~loc ~env x) with _ -> None
 
 let rec arrow_to_list (x : core_type) : core_type list =
   match x.ptyp_desc with
