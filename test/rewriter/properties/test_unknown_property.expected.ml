@@ -7,7 +7,7 @@ include struct
     QCheck.Test.make
       ~name:"add_is_my_property"
       (QCheck.pair QCheck.int QCheck.int)
-      (fun (gen_0, gen_1) -> my_property add gen_0 gen_1)
+      (fun (arb_0, arb_1) -> my_property add arb_0 arb_1)
 
   let () = Runner.add_tests [ test_add_is_my_property ]
 end

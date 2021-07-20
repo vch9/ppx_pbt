@@ -203,16 +203,16 @@ module Arith = struct
     | i -> integral_of_int_exn i
     | exception Z.Overflow -> fatally_saturated_z z
 
-  let gen_z : Z.t QCheck.arbitrary = QCheck.map Z.of_int QCheck.(0 -- 100000)
+  let arb_z : Z.t QCheck.arbitrary = QCheck.map Z.of_int QCheck.(0 -- 100000)
 
   include struct
     let integral_to_z (i : integral) : Z.t =
       S.(to_z (ediv i scaling_factor))
-      [@@pbt {| roundtrip{integral_exn}[gen_z] |}]
+      [@@pbt {| roundtrip{integral_exn}[arb_z] |}]
 
     let test_integral_to_z_is_roundtrip =
-      QCheck.Test.make ~name:"integral_to_z_is_roundtrip" gen_z (fun gen_0 ->
-          Pbt.Properties.roundtrip integral_to_z integral_exn gen_0)
+      QCheck.Test.make ~name:"integral_to_z_is_roundtrip" arb_z (fun arb_0 ->
+          Pbt.Properties.roundtrip integral_to_z integral_exn arb_0)
 
     let () = Runner.add_tests [ test_integral_to_z_is_roundtrip ]
   end

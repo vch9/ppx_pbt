@@ -166,12 +166,12 @@ module Arith = struct
       [@@pbt {| neutral_left{zero}[int]; neutral_right{zero}[int] |}]
 
     let test_add_is_neutral_left =
-      QCheck.Test.make ~name:"add_is_neutral_left" QCheck.int (fun gen_0 ->
-          Pbt.Properties.neutral_left add zero gen_0)
+      QCheck.Test.make ~name:"add_is_neutral_left" QCheck.int (fun arb_0 ->
+          Pbt.Properties.neutral_left add zero arb_0)
 
     let test_add_is_neutral_right =
-      QCheck.Test.make ~name:"add_is_neutral_right" QCheck.int (fun gen_0 ->
-          Pbt.Properties.neutral_right add zero gen_0)
+      QCheck.Test.make ~name:"add_is_neutral_right" QCheck.int (fun arb_0 ->
+          Pbt.Properties.neutral_right add zero arb_0)
 
     let () =
       Runner.add_tests [ test_add_is_neutral_left; test_add_is_neutral_right ]

@@ -13,7 +13,7 @@ include struct
     QCheck.Test.make
       ~name:"encoding_is_roundtrip_data_encoding"
       arb
-      (fun gen_0 -> Pbt.Properties.roundtrip_data_encoding encoding gen_0)
+      (fun arb_0 -> Pbt.Properties.roundtrip_data_encoding encoding arb_0)
 
   let () = Runner.add_tests [ test_encoding_is_roundtrip_data_encoding ]
 end

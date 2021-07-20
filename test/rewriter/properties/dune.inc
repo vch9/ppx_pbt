@@ -63,23 +63,23 @@
  (preprocess (pps ppx_pbt)))
 
 (rule
- (targets test_local_gen.expected.format)
- (deps (:pp pp.exe) (:input test_local_gen.expected.ml))
+ (targets test_local_arb.expected.format)
+ (deps (:pp pp.exe) (:input test_local_arb.expected.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
 
 (rule
- (targets test_local_gen.actual)
- (deps (:pp pp.exe) (:input test_local_gen.ml))
+ (targets test_local_arb.actual)
+ (deps (:pp pp.exe) (:input test_local_arb.ml))
  (action (bash "./%{pp} --impl %{input} -o %{targets}")))
 
 (rule
  (alias runtest)
- (deps (:actual test_local_gen.actual) (:expected test_local_gen.expected.format))
+ (deps (:actual test_local_arb.actual) (:expected test_local_arb.expected.format))
  (action (diff %{expected} %{actual})))
 
 (test
- (name test_local_gen)
- (modules test_local_gen)
+ (name test_local_arb)
+ (modules test_local_arb)
  (libraries zarith data-encoding)
  (preprocess (pps ppx_pbt)))
 

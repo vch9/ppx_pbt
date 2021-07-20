@@ -120,7 +120,7 @@ module Saturating_repr = struct
       QCheck.Test.make
         ~name:"scale_fast_is_oracle"
         (QCheck.pair QCheck.int QCheck.int)
-        (fun (gen_0, gen_1) -> Pbt.Properties.oracle scale_fast mul gen_0 gen_1)
+        (fun (arb_0, arb_1) -> Pbt.Properties.oracle scale_fast mul arb_0 arb_1)
 
     let () = Runner.add_tests [ test_scale_fast_is_oracle ]
   end

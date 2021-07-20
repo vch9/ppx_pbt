@@ -109,12 +109,12 @@ module Saturating_repr = struct
       [@@pbt {| capped{saturated}[int]; absorbs{zero}[int] |}]
 
     let test_mul_is_capped =
-      QCheck.Test.make ~name:"mul_is_capped" QCheck.int (fun gen_0 ->
-          Pbt.Properties.capped mul saturated gen_0)
+      QCheck.Test.make ~name:"mul_is_capped" QCheck.int (fun arb_0 ->
+          Pbt.Properties.capped mul saturated arb_0)
 
     let test_mul_is_absorbs =
-      QCheck.Test.make ~name:"mul_is_absorbs" QCheck.int (fun gen_0 ->
-          Pbt.Properties.absorbs mul zero gen_0)
+      QCheck.Test.make ~name:"mul_is_absorbs" QCheck.int (fun arb_0 ->
+          Pbt.Properties.absorbs mul zero arb_0)
 
     let () = Runner.add_tests [ test_mul_is_capped; test_mul_is_absorbs ]
   end
@@ -123,8 +123,8 @@ module Saturating_repr = struct
     let mul_fast x y = x * y [@@pbt {| absorbs{zero}[int] |}]
 
     let test_mul_fast_is_absorbs =
-      QCheck.Test.make ~name:"mul_fast_is_absorbs" QCheck.int (fun gen_0 ->
-          Pbt.Properties.absorbs mul_fast zero gen_0)
+      QCheck.Test.make ~name:"mul_fast_is_absorbs" QCheck.int (fun arb_0 ->
+          Pbt.Properties.absorbs mul_fast zero arb_0)
 
     let () = Runner.add_tests [ test_mul_fast_is_absorbs ]
   end
@@ -138,12 +138,12 @@ module Saturating_repr = struct
       [@@pbt {| absorbs{zero}[int]; capped{saturated}[int] |}]
 
     let test_scale_fast_is_absorbs =
-      QCheck.Test.make ~name:"scale_fast_is_absorbs" QCheck.int (fun gen_0 ->
-          Pbt.Properties.absorbs scale_fast zero gen_0)
+      QCheck.Test.make ~name:"scale_fast_is_absorbs" QCheck.int (fun arb_0 ->
+          Pbt.Properties.absorbs scale_fast zero arb_0)
 
     let test_scale_fast_is_capped =
-      QCheck.Test.make ~name:"scale_fast_is_capped" QCheck.int (fun gen_0 ->
-          Pbt.Properties.capped scale_fast saturated gen_0)
+      QCheck.Test.make ~name:"scale_fast_is_capped" QCheck.int (fun arb_0 ->
+          Pbt.Properties.capped scale_fast saturated arb_0)
 
     let () =
       Runner.add_tests [ test_scale_fast_is_absorbs; test_scale_fast_is_capped ]
@@ -156,12 +156,12 @@ module Saturating_repr = struct
       [@@pbt {| neutrals{zero}[int]; capped{saturated}[int] |}]
 
     let test_add_is_neutrals =
-      QCheck.Test.make ~name:"add_is_neutrals" QCheck.int (fun gen_0 ->
-          Pbt.Properties.neutrals add zero gen_0)
+      QCheck.Test.make ~name:"add_is_neutrals" QCheck.int (fun arb_0 ->
+          Pbt.Properties.neutrals add zero arb_0)
 
     let test_add_is_capped =
-      QCheck.Test.make ~name:"add_is_capped" QCheck.int (fun gen_0 ->
-          Pbt.Properties.capped add saturated gen_0)
+      QCheck.Test.make ~name:"add_is_capped" QCheck.int (fun arb_0 ->
+          Pbt.Properties.capped add saturated arb_0)
 
     let () = Runner.add_tests [ test_add_is_neutrals; test_add_is_capped ]
   end
@@ -170,8 +170,8 @@ module Saturating_repr = struct
     let sub x y = Int.max (x - y) 0 [@@pbt {| floored_left{zero}[int] |}]
 
     let test_sub_is_floored_left =
-      QCheck.Test.make ~name:"sub_is_floored_left" QCheck.int (fun gen_0 ->
-          Pbt.Properties.floored_left sub zero gen_0)
+      QCheck.Test.make ~name:"sub_is_floored_left" QCheck.int (fun arb_0 ->
+          Pbt.Properties.floored_left sub zero arb_0)
 
     let () = Runner.add_tests [ test_sub_is_floored_left ]
   end
