@@ -49,7 +49,7 @@ type t
 val get_path : psig_value -> path
 
 (** [get_properties psig_value] returns the properties inside [psig_value] *)
-val get_properties : psig_value -> Test.Properties.t
+val get_properties : psig_value -> Properties.t
 
 (** [get_name psig_value] returns the function name inside [psig_value] *)
 val get_name : psig_value -> string
@@ -84,7 +84,7 @@ val env_with_file_name : string -> unit
 (** [add_env name] build and add a psig_value in the environment [t] *)
 val add_env :
   ?path:path ->
-  ?properties:Test.Properties.t ->
+  ?properties:Properties.t ->
   ?value:Ppxlib.signature_item ->
   string ->
   unit

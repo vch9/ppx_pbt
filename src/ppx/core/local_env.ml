@@ -32,7 +32,7 @@ type path = [ `Psig_module of string | md_expr ] list [@@deriving show]
 type psig_value = {
   name : string;
   path : path;
-  properties : Test.Properties.t;
+  properties : Properties.t;
   value : signature_item option;
       [@printer Format.pp_print_option Pprintast.signature_item]
 }
