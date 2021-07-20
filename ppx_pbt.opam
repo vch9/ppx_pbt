@@ -25,6 +25,7 @@ depends: [
   "zarith" {>= "1.12"}
   "qcheck-alcotest" {>= "0.17"}
   "ppx_deriving_qcheck" {>= "0.1"}
+  "ppx_deriving" {>= "5.0"}
 ]
 
 pin-depends: [
