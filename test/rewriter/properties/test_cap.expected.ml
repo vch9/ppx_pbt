@@ -118,10 +118,10 @@ module Saturating_repr = struct
     let add x y =
       let z = x + y in
       if z >= 0 then z else saturated
-      [@@pbt {| capped{saturated}[uint] |}]
+      [@@pbt {| capped{saturated}[int] |}]
 
     let test_add_is_capped =
-      QCheck.Test.make ~name:"add_is_capped" Pbt.Gens.uint (fun gen_0 ->
+      QCheck.Test.make ~name:"add_is_capped" QCheck.int (fun gen_0 ->
           Pbt.Properties.capped add saturated gen_0)
 
     let () = Runner.add_tests [ test_add_is_capped ]

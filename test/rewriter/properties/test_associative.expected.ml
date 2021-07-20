@@ -4,7 +4,7 @@ include struct
   let test_add_is_associative =
     QCheck.Test.make
       ~name:"add_is_associative"
-      (QCheck.pair Pbt.Gens.int (QCheck.pair Pbt.Gens.int Pbt.Gens.int))
+      (QCheck.pair QCheck.int (QCheck.pair QCheck.int QCheck.int))
       (fun (gen_0, (gen_1, gen_2)) ->
         Pbt.Properties.associative add gen_0 gen_1 gen_2)
 

@@ -113,7 +113,7 @@ module Saturating_repr = struct
     else if small_enough y then x * y
     else if Int.(y > saturated / x) then saturated
     else x * y
-    [@@pbt {| oracle{mul}[uint, uint] |}]
+    [@@pbt {| oracle{mul}[int, int] |}]
 
   let add x y =
     let z = x + y in

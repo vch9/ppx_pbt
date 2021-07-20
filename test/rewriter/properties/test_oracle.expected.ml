@@ -114,12 +114,12 @@ module Saturating_repr = struct
       else if small_enough y then x * y
       else if Int.(y > saturated / x) then saturated
       else x * y
-      [@@pbt {| oracle{mul}[uint, uint] |}]
+      [@@pbt {| oracle{mul}[int, int] |}]
 
     let test_scale_fast_is_oracle =
       QCheck.Test.make
         ~name:"scale_fast_is_oracle"
-        (QCheck.pair Pbt.Gens.uint Pbt.Gens.uint)
+        (QCheck.pair QCheck.int QCheck.int)
         (fun (gen_0, gen_1) -> Pbt.Properties.oracle scale_fast mul gen_0 gen_1)
 
     let () = Runner.add_tests [ test_scale_fast_is_oracle ]
