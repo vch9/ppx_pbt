@@ -23,4 +23,24 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-let inline_impl_tests () = failwith "TODO implem"
+open Ppxlib
+
+let get_attributes stri =
+  match stri.pstr_desc with
+  | Pstr_value (_, xs) -> List.concat @@ List.map (fun x -> x.pvb_attributes) xs
+  | Pstr_eval (_, xs) -> xs
+  | _ -> []
+
+let structure_item ~callback stri =
+  let attributes = get_attributes stri in
+  let properties = Helpers.get_properties attributes in
+  let n_pbt = List.length properties in
+  match stri with
+  (* let f args = expr [@@pbt <properties>] *)
+  | [%stri let [%p? f] = [%e? _body]] when n_pbt > 0 ->
+      let name = Option.get @@ Helpers.extract_name_from_pattern f in
+      let loc = stri.pstr_loc in
+
+      let tests = Core__Tests.properties_to_test ~loc ~name properties in
+      Common__Ast_helpers.Structure.str_include ~loc @@ stri :: tests
+  | _ -> callback stri
