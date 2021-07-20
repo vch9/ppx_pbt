@@ -45,3 +45,17 @@ let pbt_name = "pbt"
 let from_string properties =
   let lexbuf_pps = Lexing.from_string properties in
   Core.Parser.properties Core.Lexer.token lexbuf_pps
+
+(** [get_properties attributes] returns the list propertiy inside [attributes]
+
+    Step 1: keep every attribute named {!pbt_name}
+    Step 3: extract each attribute's payload, which must be a string constant
+    Step 3: parse the properties
+    Step 4: concat every properties into a single list
+
+    Implicitly the function returns an empty list of properties if there is not
+    properties attached on the attributes *)
+let get_properties attributes =
+  filter_attributes pbt_name attributes
+  |> List.map Common.Payload.pbt_from_attribute
+  |> List.map from_string |> List.concat

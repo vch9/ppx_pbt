@@ -30,21 +30,6 @@ let interface file_name =
   let () = Env.fetch_env file_name in
   Filename.basename file_name = Env.get_file_name ()
 
-(** [get_properties attributes] returns the list propertiy inside [attributes]
-
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
-
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  Helpers.filter_attributes Helpers.pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map Helpers.from_string
-  |> List.concat
-
 (** [find_attributes code_path sig] does an in-depth course of a signature_item.
 
     It looks for [Psig_value] where there's an attribute "pbt" attached to it.
@@ -57,7 +42,7 @@ let rec find_attributes x = find_attributes_signature_item [] x
 and find_attributes_signature_item code_path sigi =
   match sigi.psig_desc with
   | Psig_value vd -> (
-      let properties = get_properties vd.pval_attributes in
+      let properties = Helpers.get_properties vd.pval_attributes in
       match properties with
       | [] -> ()
       | _ ->
