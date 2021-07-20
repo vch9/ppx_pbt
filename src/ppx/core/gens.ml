@@ -26,10 +26,22 @@ open Ppxlib
 
 let replace_gens ~loc gens =
   List.map
-    (Arbitrary__Types_helper.Primitive.from_string
-       ~loc
-       ~recursives_types:[]
-       ~mutual_types:[])
+    (fun x ->
+      let expr =
+        Arbitrary__Types_helper.Primitive.from_string
+          ~loc
+          ~recursives_types:[]
+          ~mutual_types:[]
+          x
+      in
+      match expr.pexp_desc with
+      (* That's a dirty hack to use from_string from ppx_deriving_qcheck and
+         still use arbitrary from the local scope if it does not find an arbitrary
+         in QCheck. *)
+      | Pexp_ident { txt = Lident s; _ } ->
+          let s = String.sub s 4 (String.length s - 4) in
+          Common__Ast_helpers.Expression.pexp_lident ~loc s
+      | _ -> expr)
     gens
 
 (** [from_core_type_opt] is a try/catch version of
