@@ -96,9 +96,11 @@ let store_env () =
       close_out out_channel
 
 let fetch_env file_name =
-  let path = path_env file_name in
-  let in_channel = open_in path in
-  let () = env := Marshal.from_channel in_channel in
-  close_in in_channel
+  try
+    let path = path_env file_name in
+    let in_channel = open_in path in
+    let () = env := Marshal.from_channel in_channel in
+    close_in in_channel
+  with _ -> init_env ()
 
 let pp fmt = pp fmt !env
