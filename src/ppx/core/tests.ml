@@ -80,7 +80,7 @@ and pbt_to_test ~loc name property gens args =
   let open Properties in
   let _ = check_args loc property args in
   let (fun_pattern, gens) =
-    Pairs.pattern_from_gens loc (fun x -> "gen_" ^ x) gens
+    Pairs.pattern_from_gens loc (fun x -> "arb_" ^ x) gens
   in
   let call = Properties.call_property loc name (property, args, gens) in
   [%expr fun [%p fun_pattern] -> [%e call]]
