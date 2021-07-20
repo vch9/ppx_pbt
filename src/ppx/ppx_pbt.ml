@@ -61,36 +61,10 @@ class mapper =
       else super#signature sigs
 
     method! structure_item stri =
-      if not (ignore ()) then failwith "TODO stri"
+      if not (ignore ()) then
+        Implementation.structure_item ~callback:super#structure_item stri
       else super#structure_item stri
-    (* let expand stri =
-     *   let loc = stri.pstr_loc in
-     * 
-     *   let infos_pbt = get_attributes stri |> filter_attributes pbt_name in
-     *   let n_pbt = List.length infos_pbt in
-     * 
-     *   match stri with
-     *   (\* let f args = expr [@@pbt <properties>] *\)
-     *   | [%stri let [%p? f] = [%e? _body]] when n_pbt > 0 ->
-     *       let infos =
-     *         let name = extract_name_from_pat f in
-     *         List.map (Helpers.Info.update_name name) infos_pbt
-     *       in
-     *       AH.Structure.str_include ~loc (stri :: Test.Tests.replace_pbt infos)
-     *   (\* default cases *\)
-     *   | x -> super#structure_item x
-     * in
-     * 
-     * if not !ignore then expand stri else super#structure_item stri *)
   end
-
-(* let impl xs =l
- *   let file_name = get_file_name_str @@ List.hd xs in
- * 
- *   if not (ignore ()) then
- *     let () = Env.fetch_env file_name in
- *     if file_name = Env.get_file_name () then inline_impl_tests xs else xs
- *   else xs *)
 
 let () =
   let mapper = new mapper in
