@@ -79,7 +79,7 @@ let takes_n l1 l2 n =
     | (n, [], x :: l2) -> Option.get x :: aux l1 l2 (n - 1)
     | _ -> raise (Invalid_argument "")
   in
-  List.rev @@ aux l1 l2 n
+  aux l1 l2 n
 
 let infer_gens_from_sig ~loc sig_item =
   match sig_item.psig_desc with
