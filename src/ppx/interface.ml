@@ -76,7 +76,11 @@ let rec find_and_replace (path, properties, name, sigi) stri : structure_item =
       match Helpers.extract_name_from_pattern pat with
       | Some name' when name = name' ->
           let tests =
-            Core__Tests.properties_to_test ~name ?sig_item:sigi properties
+            Core__Tests.properties_to_test
+              ~loc:stri.pstr_loc
+              ~name
+              ?sig_item:sigi
+              properties
           in
           Common__Ast_helpers.Structure.str_include ~loc @@ stri :: tests
       | _ -> stri)

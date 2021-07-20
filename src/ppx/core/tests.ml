@@ -32,23 +32,16 @@ module Info = Common.Helpers.Info
 module Payload = Common.Payload
 module Pairs = Common.Helpers.Pairs
 
-(** [extract_location_sig_item sig_item] extract location from [sig_item].
-    Returns None if [sig_item] is absent *)
-let extract_location_sig_item = function
-  | None -> Location.none
-  | Some x -> x.psig_loc
-
-let rec properties_to_test ~name ?sig_item properties =
+let rec properties_to_test ~loc ~name ?sig_item properties =
   let (tests, names) =
-    List.split @@ List.map (property_to_test ~name ?sig_item) properties
+    List.split @@ List.map (property_to_test ~loc ~name ?sig_item) properties
   in
   let loc = Location.none in
   let names = E.pexp_list ~loc (List.map (E.pexp_lident ~loc) names) in
   let add_runner = [%stri let () = Runner.add_tests [%e names]] in
   tests @ [ add_runner ]
 
-and property_to_test ~name ?sig_item (property, args, gens) =
-  let loc = extract_location_sig_item sig_item in
+and property_to_test ~loc ~name ?sig_item (property, args, gens) =
   let (pat_name, expr_name, test_name) = name_to_test ~loc name property in
   let (gens_expr, gens) = gens_to_test ~loc sig_item property gens in
   let tested_fun = pbt_to_test ~loc name property gens args in

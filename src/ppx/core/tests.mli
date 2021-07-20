@@ -35,7 +35,11 @@ open Ppxlib
     Returns the new list of tests as a structure_item list including
     QCheck.Test.t and add them to the test suite. *)
 val properties_to_test :
-  name:string -> ?sig_item:signature_item -> Properties.t -> structure_item list
+  loc:location ->
+  name:string ->
+  ?sig_item:signature_item ->
+  Properties.t ->
+  structure_item list
 
 (** [property_to_test loc name properties] create a test for a single property
     on the function called [name].
@@ -44,6 +48,7 @@ val properties_to_test :
     The optional paramater [?sig_item] can be used to infer required generator
     using {{:https://github.com/vch9/ppx_deriving_qcheck}ppx_deriving_qcheck}. *)
 val property_to_test :
+  loc:location ->
   name:string ->
   ?sig_item:signature_item ->
   Properties.property ->
