@@ -27,10 +27,6 @@
 
 open Ppxlib
 
-(** [replace_gens loc gens] replace generators identifers with the QCheck generator
-    using [Pbt.Gens.from_string] *)
-val replace_gens : loc:location -> Properties.gen list -> expression list
-
 (** [infer_gens_from_sig loc sig] extract the generators needed for the signature
     item, which must be a Psig_value.
 
