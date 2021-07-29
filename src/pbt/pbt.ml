@@ -25,38 +25,6 @@
 
 open Ppxlib
 
-module Gens = struct
-  let int = QCheck.int
-
-  let uint = QCheck.(map (fun x -> abs x) int)
-
-  let float = QCheck.float
-
-  let char = QCheck.char
-
-  let string = QCheck.string
-
-  let bool = QCheck.bool
-
-  let unit = QCheck.unit
-
-  let from_string ?(loc = Location.none) = function
-    | "int" -> [%expr Pbt.Gens.int]
-    | "uint" -> [%expr Pbt.Gens.uint]
-    | "float" -> [%expr Pbt.Gens.float]
-    | "char" -> [%expr Pbt.Gens.char]
-    | "string" -> [%expr Pbt.Gens.string]
-    | "bool" -> [%expr Pbt.Gens.float]
-    | "unit" -> [%expr Pbt.Gens.float]
-    | s ->
-        {
-          pexp_desc = Pexp_ident { txt = Lident s; loc };
-          pexp_loc = loc;
-          pexp_loc_stack = [];
-          pexp_attributes = [];
-        }
-end
-
 module Properties = struct
   let commutative f x y = f x y = f y x
 

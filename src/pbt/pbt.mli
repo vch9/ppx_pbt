@@ -23,39 +23,6 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-module Gens : sig
-  (** Int generator *)
-  val int : int QCheck.arbitrary
-
-  (** Unsigned int generator *)
-  val uint : int QCheck.arbitrary
-
-  (** Float generator *)
-  val float : float QCheck.arbitrary
-
-  (** Char generator *)
-  val char : char QCheck.arbitrary
-
-  (** String generator *)
-  val string : string QCheck.arbitrary
-
-  (** Bool generator *)
-  val bool : bool QCheck.arbitrary
-
-  (** Unit generator *)
-  val unit : unit QCheck.arbitrary
-
-  (** Creates expression from a generator identifier
-
-      If the string belongs to this module generators, it will create an
-      expression like:
-      from_string id -> Pbt.Gens.id
-
-      Otherwise, local_gen is required
-      from_string id -> gen_id *)
-  val from_string : ?loc:Ppxlib.location -> string -> Ppxlib.expression
-end
-
 module Properties : sig
   (** [commutative op x y] test commutativity law *)
   val commutative : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
