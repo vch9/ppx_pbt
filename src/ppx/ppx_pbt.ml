@@ -28,12 +28,7 @@ open Ppxlib
 let print_argv () = Array.fold_left (fun acc x -> acc ^ " " ^ x) "" Sys.argv
 
 let ignore () =
-  Array.exists
-    (fun x ->
-      Filename.check_suffix x ".expected.ml"
-      || Filename.check_suffix x ".pp.ml"
-      || Filename.check_suffix x ".pp.mli")
-    Sys.argv
+  Array.exists (fun x -> Filename.check_suffix x ".expected.ml") Sys.argv
 
 (** [get_file_name_sig sigi] returns the file name where [sigi] is located *)
 let get_file_name_sig sigi =
