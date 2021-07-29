@@ -29,7 +29,9 @@ open Ppxlib
 let pbt_name = "pbt"
 
 (** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern {[ let <pattern> = <expr> ]} *)
+    located in the pattern
+
+    {[ let <pattern> = <expr> ]} *)
 let extract_name_from_pattern pat : string option =
   match pat.ppat_desc with
   | Ppat_any -> None
