@@ -25,23 +25,22 @@
 
 open Ppxlib
 
+(** [pbt_name] constant name for attributes *)
+let pbt_name = "pbt"
+
 (** [extract_name_from_pattern pat] tries to extract the function name
     located in the pattern {[ let <pattern> = <expr> ]} *)
 let extract_name_from_pattern pat : string option =
   match pat.ppat_desc with
   | Ppat_any -> None
   | Ppat_var { txt = x; _ } -> Some x
-  | _ ->
-      let x = Obj.Extension_constructor.of_val pat in
-      let x = Obj.Extension_constructor.name x in
-      Printf.printf "extract_name_from_pattern: %s\n" x ;
-      None
+  | _ -> None
 
+(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
 let filter_attributes expected xs =
   List.filter (fun attr -> attr.attr_name.txt = expected) xs
 
-let pbt_name = "pbt"
-
+(** [from_string properties] parse [properties] and returns a Properties.t *)
 let from_string properties =
   let lexbuf_pps = Lexing.from_string properties in
   Core.Parser.properties Core.Lexer.token lexbuf_pps
