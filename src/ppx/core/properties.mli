@@ -44,16 +44,6 @@ and t = properties
 
 val pp : Format.formatter -> t -> unit
 
-(** Checks gens check if the number of given generator is equals to the expected
-    number of generators.
-    Raise an exception if expected and actual are different *)
-val check_gens : location -> string -> 'a list -> unit
-
-(** Checks args check if the number of given arguments is equals to the expected
-    number of arguments.
-    Raise an exception if expected and actual are different *)
-val check_args : location -> string -> 'a list -> unit
-
 (** Create an expression from the property *)
 val call_property :
   location -> string -> string * string list * string nested_pairs -> expression

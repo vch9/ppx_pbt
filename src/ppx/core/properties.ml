@@ -63,13 +63,6 @@ let _check_help loc ppty xs ty =
         ppty
         msg
 
-let check_gens _loc _property_name _gens =
-  (* check_help loc property_name gens `Gens *)
-  ()
-
-let check_args _loc _property_name _args = ()
-(* check_help loc property_name args `Args *)
-
 let args_to_expr loc args =
   let f x = (Nolabel, E.pexp_lident ~loc x) in
   List.map f args

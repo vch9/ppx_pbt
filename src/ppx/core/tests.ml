@@ -77,8 +77,6 @@ and name_to_test ~loc name property =
   (pat_name, expr_name, test_name)
 
 and pbt_to_test ~loc name property gens args =
-  let open Properties in
-  let _ = check_args loc property args in
   let (fun_pattern, gens) =
     Pairs.pattern_from_gens loc (fun x -> "arb_" ^ x) gens
   in
