@@ -84,16 +84,10 @@ let rec find_and_replace (path, properties, name, sigi) stri : structure_item =
           in
           Common__Ast_helpers.Structure.str_include ~loc @@ stri :: tests
       | _ -> stri)
-  (* `Psig_module :: _, Pstr_module *)
   | ( `Psig_module mod_name :: path,
       {
         pstr_desc =
-          Pstr_module
-            ({
-               pmb_name = { txt = Some mod_name'; _ };
-               (* pmb_expr = { pmod_desc = Pmod_structure structure; _ } as pmb; *)
-             _;
-             } as md);
+          Pstr_module ({ pmb_name = { txt = Some mod_name'; _ }; _ } as md);
         _;
       } )
     when mod_name = mod_name' ->
