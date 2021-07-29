@@ -40,34 +40,3 @@ val properties_to_test :
   ?sig_item:signature_item ->
   Properties.t ->
   structure_item list
-
-(** [property_to_test loc name properties] create a test for a single property
-    on the function called [name].
-    Returns the test and its identifier as a string.
-
-    The optional paramater [?sig_item] can be used to infer required generator
-    using {{:https://github.com/vch9/ppx_deriving_qcheck}ppx_deriving_qcheck}. *)
-val property_to_test :
-  loc:location ->
-  name:string ->
-  ?sig_item:signature_item ->
-  Properties.property ->
-  structure_item * string
-
-(** Extract generators from generators identifiers, also check if the number
-    of generator is correct only if the property is known to our program *)
-val gens_to_test :
-  loc:location ->
-  signature_item option ->
-  Properties.property_name ->
-  Properties.gen list ->
-  expression * expression Common.Helpers.Pairs.nested_pairs
-
-(** Create the boolean function used in QCheck tests *)
-val pbt_to_test :
-  loc:location ->
-  string ->
-  Properties.property_name ->
-  expression Common.Helpers.Pairs.nested_pairs ->
-  Properties.arg list ->
-  expression

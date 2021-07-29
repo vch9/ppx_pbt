@@ -41,9 +41,15 @@ let rec properties_to_test ~loc ~name ?sig_item properties =
   let add_runner = [%stri let () = Runner.add_tests [%e names]] in
   tests @ [ add_runner ]
 
+(** [property_to_test loc name properties] create a test for a single property
+    on the function called [name].
+    Returns the test and its identifier as a string.
+
+    The optional paramater [?sig_item] can be used to infer required generator
+    using {{:https://github.com/vch9/ppx_deriving_qcheck}ppx_deriving_qcheck}. *)
 and property_to_test ~loc ~name ?sig_item (property, args, gens) =
   let (pat_name, expr_name, test_name) = name_to_test ~loc name property in
-  let (gens_expr, gens) = gens_to_test ~loc sig_item property gens in
+  let (gens_expr, gens) = Gens.create_gens ~loc sig_item property gens in
   let tested_fun = pbt_to_test ~loc name property gens args in
 
   let test =
@@ -52,13 +58,6 @@ and property_to_test ~loc ~name ?sig_item (property, args, gens) =
         QCheck.Test.make ~name:[%e expr_name] [%e gens_expr] [%e tested_fun]]
   in
   (test, test_name)
-
-(** [gens_to_test loc ?sig_item property gens] extract QCheck generators from [gens].
-
-    In the case where [sig_item] is present, we can infer the type and number of
-    generators required for our [property] and the function under test. *)
-and gens_to_test ~loc (sig_item : signature_item option) property gens =
-  Gens.create_gens ~loc sig_item property gens
 
 (** [name_to_test loc name property] builds and returns
 
@@ -76,6 +75,8 @@ and name_to_test ~loc name property =
 
   (pat_name, expr_name, test_name)
 
+(** [pbt_to_test loc name propertyes gens args] creates the boolean function
+    used in a QCheck test. *)
 and pbt_to_test ~loc name property gens args =
   let (fun_pattern, gens) =
     Pairs.pattern_from_gens loc (fun x -> "arb_" ^ x) gens
