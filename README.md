@@ -6,12 +6,7 @@ Property based tests are written using [QCheck OCaml library](https://github.com
 
 Documentation
 --------------
-Build the documentation
-```sh
-$ dune build @doc
-```
-Entry point and user manual can be found at `_build/default/_doc/_html/ppx_pbt/Ppx_pbt/index.html`
-
+Documentation can be found [here](https://vch9.github.io/ppx_pbt/dev/ppx_pbt/index.html).
 
 Test your program with ppx_pbt
 ---------------------------------
