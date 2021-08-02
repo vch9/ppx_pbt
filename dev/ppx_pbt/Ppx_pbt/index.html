@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Ppx_pbt (ppx_pbt.Ppx_pbt)</title><link rel="stylesheet" href="../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 1.5.3"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body><div class="content"><header><nav><a href="../index.html">Up</a> – <a href="../index.html">ppx_pbt</a> &#x00BB; Ppx_pbt</nav><h1>Module <code>Ppx_pbt</code></h1><h2 id="ppx-for-property-based-test-generation"><a href="#ppx-for-property-based-test-generation" class="anchor"></a>Ppx for property-based test generation</h2><nav class="toc"><ul><li><a href="#annotation-based-system">Annotation-based system</a><ul><li><a href="#annotation-language">Annotation language</a></li><li><a href="#specifying-generators">Specifying generators</a></li><li><a href="#specifying-properties">Specifying properties</a></li></ul></li><li><a href="#annotations-in-implementation-files">Annotations in implementation files</a></li><li><a href="#annotations-in-interface-files">Annotations in interface files</a></li><li><a href="#alcotest-runner">Alcotest runner</a></li></ul></nav></header><aside><p>This library intends to facilitate the writing of property-based test. The main purpose is to easily test redundant properties on multiple functions, a level of abstraction of property-based testing libraries is offered using properties and generators through identifiers.</p><p>Example:</p><ul><li>Addition is commutative:</li></ul><pre><code class="ml">let add = (+) [@@pbt &quot;commutative[int, int]&quot;]
+
+(* ==&gt; *)
+include struct
+  let add = (+)
+
+  let test_add_is_commutative =
+    QCheck.Test.make
+      ~name:&quot;add_is_commutative&quot;
+      (QCheck.pair QCheck.int QCheck.int)
+      (fun (arb_0, arb_1) -&gt; Pbt.Properties.commutative add arb_0 arb_1)
+
+  let () = Runner.add_tests [ test_add_is_commutative ]
+end</code></pre></aside><section><header><h3 id="annotation-based-system"><a href="#annotation-based-system" class="anchor"></a>Annotation-based system</h3></header><aside><p>We introduce an annotation-based system to describe properties which be later use to generate properties.</p></aside><section><header><h4 id="annotation-language"><a href="#annotation-language" class="anchor"></a>Annotation language</h4></header><aside><pre><code class="ml">&lt;properties&gt; ::= &lt;property list&gt;
+&lt;property&gt; ::= &lt;ident&gt; &lt;args&gt; &lt;gens&gt;
+&lt;args&gt; ::= { &lt;ident list&gt; }
+&lt;gens&gt; ::= [ &lt;ident list&gt; ]</code></pre><p>The property is splitted between 3 sub-components:</p><ul><li>property name</li><li>arguments names (can be empty)</li><li>generators names (can be empty)</li></ul><p>Example without arguments:</p><pre><code class="ml">let add = (+) [@@pbt &quot;commutative[int, int]&quot;]</code></pre><ul><li>property name: commutative</li><li>arguments names: none</li><li>generators names: int, int</li></ul><p>Example with arguments:</p><pre><code class="ml">let zero = 0
+let add = (+) [@@pbt &quot;absorbs{zero}[int]&quot;]</code></pre><ul><li>property name: absorbs</li><li>arguments names: zero</li><li>generators names: int</li></ul></aside></section><section><header><h4 id="specifying-generators"><a href="#specifying-generators" class="anchor"></a>Specifying generators</h4></header><aside><p>Generators are created using ppx_deriving_qcheck. They are for now a QCheck arbitrary, but for clarity we use the word generator (i.e arbitrary will be removed when QCheck2 is released).</p><dl><dt>see <a href="https://github.com/vch9/ppx_deriving_qcheck">https://github.com/vch9/ppx_deriving_qcheck</a></dt><dd><p>There can be 2 ways to specify generators in annotations:</p><ul><li>Specify your own generators If you want to provide your own generators, you must introduced a QCheck arbitrary named <code>arb_[name]</code>.</li></ul><p>Example:</p><pre><code class="ml">(** unsigned int *)
+type uint = int
+
+let arb_uint = QCheck.(map abs int)
+
+let add = (+) [@@pbt &quot;commutative[arb_uint, arb_uint]&quot;]</code></pre><ul><li>Use ppx_deriving_qcheck Ppx_deriving_qcheck supports multiple primitive types, but if it fails to create a QCheck arbitrary for a given arbitrary, a <code>arb_[type_name]</code> will be created</li></ul><p>Example:</p><pre><code class="ml">let add = (+) [@@pbt &quot;commutative[uint, int]&quot;]
+
+(* =&gt; *)
+include struct
+  let add = (+)
+
+  let test_add_is_commutative =
+    QCheck.Test.make
+      ~name:&quot;add_is_commutative&quot;
+      (QCheck.pair QCheck.arb_uint QCheck.int) (* &lt;- see here *) 
+      (fun (arb_0, arb_1) -&gt; Pbt.Properties.commutative add arb_0 arb_1)
+
+  let () = Runner.add_tests [ test_add_is_commutative ]
+end</code></pre></dd></dl></aside></section><section><header><h4 id="specifying-properties"><a href="#specifying-properties" class="anchor"></a>Specifying properties</h4></header><aside><p>Properties must be used with an identifier, a list of properties can be found at <a href="../Pbt/Properties/index.html"><code>Pbt.Properties</code></a>.</p><p>If it fails to find a properties inside <a href="../Pbt/Properties/index.html"><code>Pbt.Properties</code></a>, a local function describing a property must be found in the local scope.</p><p>Example:</p><pre><code class="ml"> let arb_set = QCheck.(list int)
+
+ (** [get_and_set f s x y] tests
+     mem [s] [x] ==&gt; mem ([f] [s] [x] [y]) [y] *)
+
+ let get_and_set f s x y =
+   not (List.mem s x) || List.mem (f s x y) y
+
+ (** [find_and_replace s x y] replaces [x] by [y] in [s] *)
+ let find_and_replace s x y = ...
+   [@@pbt &quot;get_and_set[arb_set, int, int]&quot;]
+
+ (** =&gt; *)
+
+ let arb_set = QCheck.(list int)
+
+ (** [get_and_set f s x y] tests
+     mem [s] [x] ==&gt; mem ([f] [s] [x] [y]) [y] *)
+
+ let get_and_set f s x y =
+   not (List.mem x s) || List.mem y (f s x y) 
+
+ include struct
+   (** [find_and_replace s x y] replaces [x] by [y] in [s] *)
+   let find_and_replace s x y = ...
+     [@@pbt &quot;get_and_set[arb_set, int, int]&quot;]
+
+   let test_find_and_replace_is_get_and_set =
+     QCheck.Test.make ~name:&quot;find_and_replace_is_get_and_set&quot;
+       (QCheck.pair arb_set (QCheck.pair QCheck.int QCheck.int))
+       (fun (arb_0, (arb_1, arb_2)) -&gt;
+          get_and_set find_and_replace arb_0 arb_1 arb_2)
+
+   let () = Runner.add_tests [test_find_and_replace_is_get_and_set]
+end</code></pre></aside></section></section><section><header><h3 id="annotations-in-implementation-files"><a href="#annotations-in-implementation-files" class="anchor"></a>Annotations in implementation files</h3></header><aside><p>Properties can be directly attached with attributes inside function implementation. The test will be inlined directly after the function under test.</p><p>Example:</p><pre><code class="ml">let add = (+) [@@pbt &quot;commutative[int, int]&quot;]
+
+(* ==&gt; *)
+include struct
+  let add = (+)
+
+  let test_add_is_commutative =
+    QCheck.Test.make
+      ~name:&quot;add_is_commutative&quot;
+      (QCheck.pair QCheck.int QCheck.int)
+      (fun (arb_0, arb_1) -&gt; Pbt.Properties.commutative add arb_0 arb_1)
+
+  let () = Runner.add_tests [ test_add_is_commutative ]
+end</code></pre></aside></section><section><header><h3 id="annotations-in-interface-files"><a href="#annotations-in-interface-files" class="anchor"></a>Annotations in interface files</h3></header><aside><p>Properties can also be attached to function declaration in interface files. Having annotation in signature allows the possibility to infer required generators for a function declaration.</p><p>ppx_deriving_qcheck is used to automatically infer generators when it's possible.</p><dl><dt>see <a href="https://github.com/vch9/ppx_deriving_qcheck">https://github.com/vch9/ppx_deriving_qcheck</a></dt><dd><p>Example:</p><pre><code class="ml">(* foo.mli *)
+val add : int -&gt; int -&gt; int [@@pbt &quot;commutative&quot;]
+
+(* foo.ml *)
+include struct
+  let add = (+)
+
+  let test_add_is_commutative =
+    QCheck.Test.make
+      ~name:&quot;add_is_commutative&quot;
+      (QCheck.pair QCheck.int QCheck.int)
+      (fun (arb_0, arb_1) -&gt; Pbt.Properties.commutative add arb_0 arb_1)
+
+  let () = Runner.add_tests [ test_add_is_commutative ]
+end</code></pre><p>However, annotations are only allowed in signatures outside any structure item and inside only modules and functors at the moment.</p></dd></dl></aside></section><section><header><h3 id="alcotest-runner"><a href="#alcotest-runner" class="anchor"></a>Alcotest runner</h3></header><div class="spec class" id="class-mapper"><a href="#class-mapper" class="anchor"></a><code><span class="keyword">class</span>  <a href="class-mapper/index.html">mapper</a> : <span class="keyword">object</span> ... <span class="keyword">end</span></code></div></section></div></body></html>
