@@ -24,39 +24,50 @@
 (*****************************************************************************)
 
 open Ppxlib
+open Common.Helpers.Pairs
+module Error = Common.Error
+module AH = Common.Ast_helpers
+module E = AH.Expression
+module P = AH.Pattern
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+type property_name = string [@@deriving show]
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
+type arg = string [@@deriving show]
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
+type gen = string [@@deriving show]
 
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
+type property = property_name * arg list * gen list [@@deriving show]
 
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
+type properties = property list [@@deriving show]
 
-(** [get_properties attributes] returns the list propertiy inside [attributes]
+and t = properties [@@deriving show]
 
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
+let _check_help loc ppty xs ty =
+  let (required, msg, f) =
+    match ty with
+    | `Args ->
+        (Pbt.Properties.nb_of_args ppty, "arguments", Error.property_arg_missing)
+    | `Gens ->
+        ( Pbt.Properties.nb_of_gens ppty,
+          "generators",
+          Error.property_gen_missing )
+  in
 
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+  match required with
+  | Some n ->
+      let len = List.length xs in
+      if n <> len then f ~loc ~property:ppty ~required:n ~actual:len ()
+  | None ->
+      Printf.printf
+        "Ppx_pbt (Warning): %s is your local property, can not check %s\n"
+        ppty
+        msg
+
+let args_to_expr loc args =
+  let f x = (Nolabel, E.pexp_lident ~loc x) in
+  List.map f args
+
+let call_property loc fun_name (name, args, gens) =
+  let args = fun_name :: args @ nested_pairs_to_list gens |> args_to_expr loc in
+  let f = Pbt.Properties.from_string ~loc name in
+  E.pexp_apply ~loc ~f ~args ()

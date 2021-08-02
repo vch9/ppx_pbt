@@ -25,38 +25,23 @@
 
 open Ppxlib
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+(** [get_attributes stri] extracts attributes from [stri] *)
+let get_attributes stri =
+  match stri.pstr_desc with
+  | Pstr_value (_, xs) -> List.concat @@ List.map (fun x -> x.pvb_attributes) xs
+  | Pstr_eval (_, xs) -> xs
+  | _ -> []
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
+let structure_item ~callback stri =
+  let attributes = get_attributes stri in
+  let properties = Helpers.get_properties attributes in
+  let n_pbt = List.length properties in
+  match stri with
+  (* let f args = expr [@@pbt <properties>] *)
+  | [%stri let [%p? f] = [%e? _body]] when n_pbt > 0 ->
+      let name = Option.get @@ Helpers.extract_name_from_pattern f in
+      let loc = stri.pstr_loc in
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
-
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
-
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
-
-(** [get_properties attributes] returns the list propertiy inside [attributes]
-
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
-
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+      let tests = Core__Tests.properties_to_test ~loc ~name properties in
+      Common__Ast_helpers.Structure.str_include ~loc @@ stri :: tests
+  | _ -> callback stri

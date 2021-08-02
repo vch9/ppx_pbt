@@ -25,38 +25,82 @@
 
 open Ppxlib
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+type md_expr = [ `Structure | `Functor ] [@@deriving show]
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
+type path = [ `Psig_module of string | md_expr ] list [@@deriving show]
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
+type psig_value = {
+  name : string;
+  path : path;
+  properties : Properties.t;
+  value : signature_item option;
+      [@printer Format.pp_print_option Pprintast.signature_item]
+}
+[@@deriving show]
 
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
+let get_path x = x.path
 
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
+let get_properties x = x.properties
 
-(** [get_properties attributes] returns the list propertiy inside [attributes]
+let get_name x = x.name
 
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
+let get_value x = x.value
 
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+type t = {
+  mutable file_name : string option;
+  mutable psig_values : psig_value list;
+}
+[@@deriving show]
+
+let _ = pp
+
+let empty_env = { file_name = None; psig_values = [] }
+
+let env = ref empty_env
+
+let get_file_name () = Option.value ~default:"_none_" !env.file_name
+
+let get_file_name_exn () = Option.get !env.file_name
+
+let get_file_name_opt () = !env.file_name
+
+let get_psig_values () = !env.psig_values
+
+let env_with_psig_value x = !env.psig_values <- x :: !env.psig_values
+
+let env_with_file_name x = !env.file_name <- Some x
+
+let add_env ?(path = []) ?(properties = []) ?value name =
+  env_with_psig_value { path; name; properties; value }
+
+let reset_env () =
+  !env.file_name <- None ;
+  !env.psig_values <- []
+
+let init_env ?file_name () =
+  reset_env () ;
+  !env.file_name <- file_name
+
+let path_env file_name =
+  Filename.remove_extension file_name
+  |> Filename.basename
+  |> Printf.sprintf "/tmp/%s.bytes"
+
+let store_env () =
+  match !env.file_name with
+  | None -> failwith "Can not store the environment without the file name"
+  | Some fn ->
+      let path = path_env fn in
+      let out_channel = open_out path in
+      let () = Marshal.to_channel out_channel !env [] in
+      close_out out_channel
+
+let fetch_env file_name =
+  try
+    let path = path_env file_name in
+    let in_channel = open_in path in
+    let () = env := Marshal.from_channel in_channel in
+    close_in in_channel
+  with _ -> init_env ()
+
+let pp fmt = pp fmt !env

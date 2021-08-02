@@ -23,40 +23,34 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Modules handling generators *)
+
 open Ppxlib
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+(** [infer_gens_from_sig loc sig] extract the generators needed for the signature
+    item, which must be a Psig_value.
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
+    {{:https://github.com/vch9/ppx_deriving_qcheck}ppx_deriving_qcheck} is used to
+    create generators from core_type inside the signature.
+    If the deriver was not able to derive a core_type inside [sig], it is replaced
+    by the value None. *)
+val infer_gens_from_sig :
+  loc:location -> signature_item -> expression option list
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
+(** [create_gens loc sig_item property gens] extract QCheck generators from the
+    combination of [gens] and [sig_item].
 
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
+    In priority, generators are taken from [gens]. In the case where [sig_item] is
+    present, we can infer missing generators from [gens] based on the signature
+    representation of the function.
 
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
-
-(** [get_properties attributes] returns the list propertiy inside [attributes]
-
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
-
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+    In the case where [property] is a built-in property of this ppx, we can perform
+    2 checks:
+    - Check that the number of generator is correct.
+    - TODO: Check that the infered generators respect the property's type. *)
+val create_gens :
+  loc:location ->
+  signature_item option ->
+  Properties.property_name ->
+  Properties.gen list ->
+  expression * expression Common.Helpers.Pairs.nested_pairs

@@ -25,38 +25,17 @@
 
 open Ppxlib
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+(** [interface file_name] returns true if there is an environement for [file_name] *)
+val interface : string -> bool
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
+(** [inline_impl_tests str] replaces the according specification in mli with the
+    actual implementation inside [str].
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
+    The file_name is fetched from a structure_item inside [str] and will use the
+    previously stored environment according to the file_name *)
+val inline_impl_tests : structure -> structure
 
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
-
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
-
-(** [get_properties attributes] returns the list propertiy inside [attributes]
-
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
-
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+(** [intf file_name signature] fetchs properties attached to attributes
+    inside each signature_item in [signature]. Creates an environment for
+    [file_name] which would be later used to inline tests in implementation files *)
+val intf : string -> signature -> signature

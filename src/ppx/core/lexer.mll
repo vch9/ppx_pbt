@@ -23,40 +23,31 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-open Ppxlib
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+{
+  open Parser
+  open Common.Error
+}
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
+let blank = [' ' '\t' '\n']
+let id = ['a'-'z' 'A'-'Z']+['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
+rule token = parse
+(* Layout *)
+| blank+ { token lexbuf }
 
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
+(* Punctuations *)
+| "[" { LCROCH }
+| "]" { RCROCH }
+| "," { COMMA }
+| "{" { LBRACKET }
+| "}" { RBRACKET }
+| ";" { SEMICOLON }
 
-(** [get_properties attributes] returns the list propertiy inside [attributes]
+(* Regexp *)
+| id as s { ID s }
 
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
+| eof { EOF }
 
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+| _ as c { syntax_error ~err:c () }

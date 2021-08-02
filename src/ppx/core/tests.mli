@@ -23,40 +23,20 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** Module handling the test generation.
+
+    Entry point is {!properties_to_test}. *)
+
 open Ppxlib
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+(** [properties_to_tests loc name sig_item properties] create a test for every
+    property inside [properties].
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
-
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
-
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
-
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
-
-(** [get_properties attributes] returns the list propertiy inside [attributes]
-
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
-
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+    Returns the new list of tests as a structure_item list including
+    QCheck.Test.t and add them to the test suite. *)
+val properties_to_test :
+  loc:location ->
+  name:string ->
+  ?sig_item:signature_item ->
+  Properties.t ->
+  structure_item list

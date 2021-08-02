@@ -23,40 +23,30 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-open Ppxlib
+(** Data-encoding can be encoded and decoded. We want to test if the encoding
+    is roundtrip
 
-(** [pbt_name] constant name for attributes *)
-let pbt_name = "pbt"
+    roundtrip_data_encoding encoding:
+      forall x:
+        x = decode (encode x)
+*)
 
-(** [extract_name_from_pattern pat] tries to extract the function name
-    located in the pattern
+open Data_encoding
 
-    {[ let <pattern> = <expr> ]} *)
-let extract_name_from_pattern pat : string option =
-  match pat.ppat_desc with
-  | Ppat_any -> None
-  | Ppat_var { txt = x; _ } -> Some x
-  | _ -> None
+let arb_int8 = QCheck.(0 -- 127)
 
-(** [filter_attributes expected attributes] filters [attributes] with name [expected] *)
-let filter_attributes expected xs =
-  List.filter (fun attr -> attr.attr_name.txt = expected) xs
+let arb_int16 = QCheck.(0 -- 32767)
 
-(** [from_string properties] parse [properties] and returns a Properties.t *)
-let from_string properties =
-  let lexbuf_pps = Lexing.from_string properties in
-  Core.Parser.properties Core.Lexer.token lexbuf_pps
+let encode_int8 = int8 [@@pbt "roundtrip_data_encoding[arb_int8]"]
 
-(** [get_properties attributes] returns the list propertiy inside [attributes]
+let encode_int16 = int16 [@@pbt "roundtrip_data_encoding[arb_int16]"]
 
-    Step 1: keep every attribute named {!pbt_name}
-    Step 3: extract each attribute's payload, which must be a string constant
-    Step 3: parse the properties
-    Step 4: concat every properties into a single list
+let encode_int32 = int32 [@@pbt "roundtrip_data_encoding[int32]"]
 
-    Implicitly the function returns an empty list of properties if there is not
-    properties attached on the attributes *)
-let get_properties attributes =
-  filter_attributes pbt_name attributes
-  |> List.map Common.Payload.pbt_from_attribute
-  |> List.map from_string |> List.concat
+let encode_int64 = int64 [@@pbt "roundtrip_data_encoding[int64]"]
+
+let encode_float = float [@@pbt "roundtrip_data_encoding[float]"]
+
+let encode_bool = bool [@@pbt "roundtrip_data_encoding[bool]"]
+
+let encode_string = string [@@pbt "roundtrip_data_encoding[string]"]

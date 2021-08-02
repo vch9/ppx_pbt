@@ -23,14 +23,6 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-module Gens : sig
-  (** Int generator *)
-  val int : int QCheck.arbitrary
-
-  (** Unsigned int generator *)
-  val uint : int QCheck.arbitrary
-end
-
 module Properties : sig
   (** [commutative op x y] test commutativity law *)
   val commutative : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
@@ -59,8 +51,8 @@ module Properties : sig
       the right or left argument is capped. *)
   val capped : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
-  (** [eq_res f oracle x y] test if the result between f and the oracle are equals *)
-  val eq_res : ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+  (** [oracle f oracle x y] test if the result between f and the oracle are equals *)
+  val oracle : ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a -> bool
 
   (** [absorb_left f absorb x] test if the function returns x when
       the left argument is absorb. *)
@@ -85,4 +77,38 @@ module Properties : sig
   (** [floored_right f floor x y] test if the function stays floored when
       the right or left argument is floored. *)
   val floored : ('a -> 'a -> 'a) -> 'a -> 'a -> bool
+
+  (** [roundtrip f g x] test if f (g x) = x *)
+  val roundtrip : ('a -> 'b) -> ('b -> 'a) -> 'b -> bool
+
+  (** [roundtrip_data_encoding encoding x] test the roundtrip property on
+   data_encoding
+
+      {[
+      let encoded_x = Data_encoding.Json.construct encoding x in
+      let decoded_x = Data_encoding.Json.destruct encoding encoded_x in
+      decoded_x = x
+      ]}
+*)
+  val roundtrip_data_encoding : 't Data_encoding.encoding -> 't -> bool
+
+  (** Creates expression from a property identifier
+
+      If the string belongs to this module properties, it will create an
+      expression like:
+      from_string id -> Pbt.Properties.id
+
+      Otherwise, local_gen is required
+      from_string id -> id *)
+  val from_string : ?loc:Ppxlib.location -> string -> Ppxlib.expression
+
+  (** Returns the number of generators needed for this module properties *)
+  val nb_of_gens : string -> int option
+
+  (** Returns the number of arguments needed for this module properties *)
+  val nb_of_args : string -> int option
+
+  (** Returns the number of generators and arguments needed for this module
+      properties *)
+  val nb_of_gens_args : string -> (int * int) option
 end
